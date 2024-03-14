@@ -1,5 +1,4 @@
 # OOP_Gruppitöö
-OOP gruppittöö
 
 Teema: Chati programm
 
