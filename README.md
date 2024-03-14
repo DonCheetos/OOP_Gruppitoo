@@ -4,3 +4,5 @@ Teema: Chati programm
 
 Liikmed: Maksim Kelus, Kaur Lõhmus, Rasmus Valk
 
+Lühikirjedus:
+programm mis võimaldab inimeselt inimesele ja inimeselt gruppile suhtlust, nii serveri vahendusel kui ka otse.
