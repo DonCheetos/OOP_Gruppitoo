@@ -14,6 +14,7 @@ sümboliga tähised: kustutatud, loetud, ootel
 kui saaja sõnumit näinud, saadab pingi serverile ja saatjale
 kui saaja ei saa kätte, saadab saaja järgmised sõnumid kuni kättesaamiseni ainult serverile
 
+klient refreshib iga kord kui saab uue sõnumi ja aegajalt pollib serverit.
 
 kasutajaliides veebilehel mis jookseb kohalikus arvutis
 ja suhtemiseks kasutab protokooli
