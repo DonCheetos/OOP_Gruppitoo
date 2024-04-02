@@ -1,4 +1,3 @@
-
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -51,7 +50,7 @@ class ParalleelTöötlemiseks implements Runnable{
 
                     String echoSõnum = in.readUTF();
 
-                    System.out.println(mitmesKlient + ".Klient, Saadab tagasi saadud sõnum: " + echoSõnum);
+                    System.out.println(mitmesKlient + ".Klient, Saadab sõnum: " + echoSõnum);
 
                     out.writeUTF(echoSõnum);
                 }
@@ -89,3 +88,5 @@ class ParalleelTöötlemiseks implements Runnable{
         }
     }
 }
+
+
