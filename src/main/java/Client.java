@@ -29,7 +29,10 @@ public class Client {
                         // 1 ja 2 määratud request tüübiks
                         if (infoTüüp.equals("file")) out.writeInt(1);
                         else if (infoTüüp.equals("echo")) out.writeInt(2); // kasutame echo, et saata tekste
-                        else out.writeInt(-1); // ei ole olemas sellist tüüpi
+                        else if (infoTüüp.equals("getsonum")) {
+                            out.writeInt(3);
+
+                        } else out.writeInt(-1); // ei ole olemas sellist tüüpi
 
                         int vastus = in.readInt(); // oleku kontrolliks
 
@@ -41,6 +44,14 @@ public class Client {
 
                             if (infoTüüp.equals("echo")) System.out.println("Sõnum saadud " + in.readUTF());
 
+                            if(infoTüüp.equals("getsonum")){
+                                System.out.println("soovitud sõnumid:");
+                                int sõnumitearv=in.readInt();
+                                for (int i = 0; i < sõnumitearv; i++) {
+                                    System.out.println("saadud:"+in.readUTF());
+
+                                }
+                            }
                             if (infoTüüp.equals("file")) {
                                 String failinimi = tahetud;
                                 int suurus = in.readInt();

@@ -1,6 +1,9 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -69,6 +72,20 @@ class ParalleelTöötlemiseks implements Runnable{
                         System.out.println(mitmesKlient + ".Klient, Saab veateate, kuna faili ei leitud");
                         out.writeInt(-1); // see on sõnum kliendile, et faili ei leitud
                     }
+                }else if(sõnumTüüp == 3){//klient küsib sõnumeid andes enda nime
+                    out.writeInt(0);//kõik korras
+                    Map<String, String[]> sõnumid = new HashMap<>();//TODO peaks salvestama saadud sõnumid listi kuskilt failist algselt ja hiljem lisama kui tuleb juurde
+                    String[] sõnumitelist={"sõnum1", "sõnum2"};//testsõnumid
+                    sõnumid.put("kasutaja1",sõnumitelist);//lisan testsõnumid
+                    String saaja=in.readUTF();
+                    String[] sõnumiteList=sõnumid.get(saaja);
+                    out.writeInt(sõnumiteList.length);//tagastab mitu sõnumit on
+                    for (String sõnum:sõnumiteList){
+                        //out.writeInt(sõnum.length());
+                        out.writeUTF(sõnum);
+                    }
+
+
                 }else {
                     System.out.println(mitmesKlient + ".Klient, Saab veateate, kuna request tüüp vale");
                     out.writeInt(-1); // antud tüüp oli vale
