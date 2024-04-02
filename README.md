@@ -23,13 +23,13 @@ ja suhtemiseks kasutab protokooli
 
 2.klient1 saadab saadud map()-ist kasutajanimele vastavale IPle sõnumi
 
-3klient1 ootab kui klient2 vastab, kui ei vasta saadab serverile.
+3. klient1 ootab kui klient2 vastab, kui ei vasta saadab serverile.
 
-4.2server salvestab sõnumi
+4.2. server salvestab sõnumi
 
-5.2klient2 küsib serveriga ühendudes punkti 1 asju.
+5.2. klient2 küsib serveriga ühendudes punkti 1 asju.
 
-4.1klient2 salvestab saadud sõnumi ja vastab et sai kätte
+4.1. klient2 salvestab saadud sõnumi ja vastab et sai kätte
 
 hiljem laiendused:
 failid
