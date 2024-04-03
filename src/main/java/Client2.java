@@ -62,13 +62,12 @@ public class Client2 {
                             if (infoTüüp.equals("file")) {
                                 out.writeUTF(tahetud);
 
-                                String failinimi = tahetud;
                                 int suurus = in.readInt();
 
                                 if (suurus == -1) System.out.println("Faili ei leitud");
                                 else {
                                     System.out.println("Fail saadud");
-                                    try (OutputStream failiKirjutada = new FileOutputStream(new File(failinimi))) {
+                                    try (OutputStream failiKirjutada = new FileOutputStream(new File(tahetud))) {
                                         byte[] sisu = new byte[suurus];
                                         in.readFully(sisu);
                                         failiKirjutada.write(sisu);
