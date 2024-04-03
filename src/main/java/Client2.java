@@ -67,7 +67,7 @@ public class Client2 {
                                 if (suurus == -1) System.out.println("Faili ei leitud");
                                 else {
                                     System.out.println("Fail saadud");
-                                    try (OutputStream failiKirjutada = new FileOutputStream(new File(tahetud))) {
+                                    try (OutputStream failiKirjutada = new FileOutputStream(tahetud)) {
                                         byte[] sisu = new byte[suurus];
                                         in.readFully(sisu);
                                         failiKirjutada.write(sisu);
