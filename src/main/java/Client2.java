@@ -1,6 +1,10 @@
 import java.io.*;
 import java.net.Socket;
 
+
+// MIKS SEE ERALDI EKSISTEERIB?
+// Kas on mingi hea põhjus, miks seda oma Client klassiks ei saa teha ja TEST.java main meetodis uus(i) isend(eid) luua.
+
 public class Client2 {
     public static void main(String[] args) throws IOException {
         int portNumber = 1337;
