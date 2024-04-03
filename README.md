@@ -1,38 +1,40 @@
 # OOP_Gruppitöö
 
-Teema: Chati programm
+## Teema
+Chati programm
 
-Liikmed: Maksim Kelus, Kaur Lõhmus, Rasmus Valk
+## Liikmed
+Maksim Kelus, Kaur Lõhmus, Rasmus Valk
 
-Lühikirjeldus:
-programm, mis võimaldab inimeselt inimesele ja inimeselt gruppile suhtlust, nii serveri vahendusel kui ka otse.
+## Lühikirjeldus
+Programm võimaldab inimeselt inimesele ja inimeselt gruppile suhtlust, nii serveri vahendusel kui ka otse.
 
-Klient saadab nii serverile kui sihtkasutajale sõnumi ja kui sihtkasutaja ei saanud kätte küsib ta serverilt hiljem
-sõnumid salvestatakse faili nii servweris kui ka saajas
-ajatempel sõnumitel
-sümboliga tähised: kustutatud, loetud, ootel
-kui saaja sõnumit näinud, saadab pingi serverile ja saatjale
-kui saaja ei saa kätte, saadab saaja järgmised sõnumid kuni kättesaamiseni ainult serverile
+Klient saadab nii serverile kui sihtkasutajale sõnumi, kui sihtkasutaja ei saanud kätte, küsib ta serverilt hiljem.
 
-klient refreshib iga kord kui saab uue sõnumi ja aegajalt pollib serverit.
+Sõnumid salvestatakse faili nii serveris kui ka saajas.
 
-kasutajaliides veebilehel mis jookseb kohalikus arvutis
-ja suhtemiseks kasutab protokooli
+Igal sõnumil on oma ajatempel.
 
-1.klient1 ühendumisel saadab serverile oma kasutajanime, mille server seab IPga vastavusse map() abil, ja küsib serverilt map() andmebaasi, küsib saamata sõnumeid
+Sümboliga tähised: kustutatud, loetud ja ootel.
 
-2.klient1 saadab saadud map()-ist kasutajanimele vastavale IPle sõnumi
+Kui saaja on sõnumit näinud, saadab pingi serverile ja saatjale.
 
-3. klient1 ootab kui klient2 vastab, kui ei vasta saadab serverile.
+Kui saaja ei saa sõnumit kätte, saadab saatja järgmised sõnumid kuni kättesaamiseni ainult serverile.
 
-4.2. server salvestab sõnumi
+Klient värskendab iga kord, kui saab uue sõnumi, ja aegajalt pollib serverit.
 
-5.2. klient2 küsib serveriga ühendudes punkti 1 asju.
+Kasutajaliides on veebilehel, mis jookseb kohalikus arvutis lisaks kliendile, ja suhtemiseks kasutab kindlat protokolli.
 
-4.1. klient2 salvestab saadud sõnumi ja vastab et sai kätte
+## Tööpõhimõte
+1. Klient1 ühendumisel saadab Serverile oma kasutajanime, mille server seab IP-ga vastavusse paisktabeli (hashmap) abil, küsib serverilt paisktabeli ning küsib saamata sõnumeid.
+2. Klient1 saadab saadud tebelist kasutajanimele vastavale IP-le sõnumi(d).
+3. Klient1 ootab, kuni Klient2 vastab. Kui ei vastata, saadab sõnumi(d) serverile.
+4. Server salvestab sõnumi(d), et tulevikus Klient2-le edasi saata.
+5. Klient2 küsib kunagi Serveriga ühendudes punkti 1 sisu.
+6. Klient2 salvestab saadud sõnumi(d) ja vastab, et sai need kätte.
 
-hiljem laiendused:
-failid
-suurte failide proxystreamimine
-logide kustutamine
-kliendi recovery protokoll
+## Hilisemad edasiarendused
+1. Failide üle võrgu saatmine
+2. Suurte failide proxystream-imine
+3. Logide kustutamine
+4. Kliendi recovery protokoll
