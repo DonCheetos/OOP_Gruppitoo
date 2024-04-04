@@ -27,19 +27,19 @@ public class Client1 {
                 // 1 ja 2 määratud request tüübiks
                 switch (infoTüüp) {
                     case SEND_ECHO:
-                        out.writeInt(ResponseCodes.SEND_ECHO.ordinal());
+                        out.writeInt(ResponseCodes.getValue(ResponseCodes.SEND_ECHO));
                         break;
                     case GET_FILE:
-                        out.writeInt(ResponseCodes.GET_FILE.ordinal());
+                        out.writeInt(ResponseCodes.getValue(ResponseCodes.GET_FILE));
                         break;
                     case GET_MESSAGE_BACKLOG:
-                        out.writeInt(ResponseCodes.GET_MESSAGE_BACKLOG.ordinal());
+                        out.writeInt(ResponseCodes.getValue(ResponseCodes.GET_MESSAGE_BACKLOG));
                         break;
                     case SEND_MESSAGE_TO_BACKLOG:
-                        out.writeInt(ResponseCodes.SEND_MESSAGE_TO_BACKLOG.ordinal());
+                        out.writeInt(ResponseCodes.getValue(ResponseCodes.SEND_MESSAGE_TO_BACKLOG));
                         break;
                     default:
-                        out.writeInt(ResponseCodes.RESPONSE_CODE_NOT_FOUND.ordinal()); // ei ole olemas sellist tüüpi
+                        out.writeInt(ResponseCodes.getValue(ResponseCodes.RESPONSE_CODE_NOT_FOUND)); // ei ole olemas sellist tüüpi
                 }
 
                 int tagastusKood = in.readInt(); // oleku kontrolliks
