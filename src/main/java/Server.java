@@ -51,16 +51,17 @@ class ParalleelTöötlemiseks implements Runnable {
 
             int sõnumiteArv = in.readInt();
             System.out.println(mitmesKlient + 1 + ". kliendilt oodatud sõnumite arv: " + sõnumiteArv + ".");
-
-            for (int i = 0; i < sõnumiteArv / 2; i++) {
+            int jälgimiskes = 0;
+            //for (int i = 0; i < sõnumiteArv / 2; i++) {
+            while(sõnumiteArv != jälgimiskes){
                 System.out.println();
-                ResponseCodes sõnumiTüüp = ResponseCodes.getCode(in.readInt());
+                ResponseCodes sõnumiTüüp = ResponseCodes.getCode(in.readInt()); jälgimiskes++;
 
                 switch (sõnumiTüüp) {
                     case SEND_ECHO:
                         out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // kinnitab, et kõik on korras, võib jätkata
 
-                        String echoSõnum = in.readUTF();
+                        String echoSõnum = in.readUTF(); jälgimiskes++;
                         System.out.println(mitmesKlient + 1 + ". klient saatis sõnumi: \"" + echoSõnum + "\".");
 
                         out.writeUTF(echoSõnum);
@@ -69,7 +70,7 @@ class ParalleelTöötlemiseks implements Runnable {
                     case GET_FILE:
                         out.writeInt(ResponseCodes.getValue(ResponseCodes.OK));
 
-                        String failiNimi = in.readUTF();
+                        String failiNimi = in.readUTF(); jälgimiskes++;
                         System.out.println(mitmesKlient + 1 + ". klient tahab saada faili: \"" + failiNimi + "\".");
 
                         try (InputStream failStream = new FileInputStream(failiNimi)) {
@@ -88,7 +89,7 @@ class ParalleelTöötlemiseks implements Runnable {
 
                         System.out.println("Edastan kliendile sõnumid, mis teised on talle vahepeal saatnud.");
 
-                        String kasutajaID = in.readUTF();
+                        String kasutajaID = in.readUTF(); jälgimiskes++;
                         List<String> kasutajaleSaadetudSõnumid = sõnumidKasutajale.get(kasutajaID);
                         if (kasutajaleSaadetudSõnumid == null) {
                             out.writeInt(0);
@@ -108,7 +109,7 @@ class ParalleelTöötlemiseks implements Runnable {
                     case SEND_MESSAGE_TO_BACKLOG:
                         out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // kõik korras
 
-                        String sihtKasutaja = in.readUTF(); // Loeb sihtkasutaja nime
+                        String sihtKasutaja = in.readUTF(); jälgimiskes++; // Loeb sihtkasutaja nime
                         System.out.println("Sihkasutaja: " + sihtKasutaja + ".");
 
                         if (!sõnumidKasutajale.containsKey(sihtKasutaja)) { // !!! kas siin ei peaks mitte uut kasutajat looma ja talle jätma !!!
@@ -117,7 +118,7 @@ class ParalleelTöötlemiseks implements Runnable {
                         }
 
                         out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // kõik korras, kasutaja olemas
-                        String sõnum = in.readUTF();
+                        String sõnum = in.readUTF(); jälgimiskes++;
 
                         sõnumidKasutajale.get(sihtKasutaja).add(sõnum);
                         System.out.println("Salvestasin tekstisisu.");
@@ -127,7 +128,7 @@ class ParalleelTöötlemiseks implements Runnable {
                     default:
                         System.out.println(mitmesKlient + 1 + ". kliendile saadetakse veateate, kuna request tüüp on vale: " + sõnumiTüüp + ".");
                         out.writeInt(ResponseCodes.getValue(ResponseCodes.RESPONSE_CODE_NOT_FOUND)); // antud tüüp oli vale
-                        in.readUTF(); // paari välja puhastamiseks
+                        in.readUTF(); jälgimiskes++;// paari välja puhastamiseks
                 }
             }
         } catch (IOException e) {
