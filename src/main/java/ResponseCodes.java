@@ -22,6 +22,19 @@ public enum ResponseCodes {
         };
     }
 
+    public static int getValue(ResponseCodes rc) {
+        return switch (rc) {
+            case OK -> 0;
+            case SEND_ECHO -> 1;
+            case GET_FILE -> 2;
+            case GET_MESSAGE_BACKLOG -> 3;
+            case SEND_MESSAGE_TO_BACKLOG -> 4;
+            case RESPONSE_CODE_NOT_FOUND -> -1;
+            case FILE_NOT_FOUND -> -2;
+            case USER_NOT_FOUND -> -3;
+        };
+    }
+
     public static ResponseCodes stringToCode(String s) {
         return switch (s) {
             case "echo" -> SEND_ECHO;

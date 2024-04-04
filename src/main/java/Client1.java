@@ -41,7 +41,7 @@ public class Client1 {
                         out.writeInt(ResponseCodes.RESPONSE_CODE_NOT_FOUND.ordinal()); // ei ole olemas sellist tüüpi
                 }
 
-                int tagastusKood = in.readInt(); // oleku kontrolliks
+                int tagastusKood = ResponseCodes.getValue(ResponseCodes.getCode(in.readInt())); // oleku kontrolliks
                 if (tagastusKood < 0) { // ERROR
                     System.out.println("Tagastuskood: " + ResponseCodes.getCode(tagastusKood) + ".");
                     throw new RuntimeException("Tagastuskoodi viga: " + ResponseCodes.getCode(tagastusKood));
