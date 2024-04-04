@@ -26,20 +26,20 @@ public class Client1 {
 
                 // 1 ja 2 määratud request tüübiks
                 switch (infoTüüp) {
-                    case SEND_ECHO:
+                    case SEND_ECHO: // saada echo-sõnum
                         out.writeInt(ResponseCodes.getValue(ResponseCodes.SEND_ECHO));
                         break;
-                    case GET_FILE:
+                    case GET_FILE: // küsi faili
                         out.writeInt(ResponseCodes.getValue(ResponseCodes.GET_FILE));
                         break;
-                    case GET_MESSAGE_BACKLOG:
+                    case GET_MESSAGE_BACKLOG: // saa vahepeal saadetud sõnumid
                         out.writeInt(ResponseCodes.getValue(ResponseCodes.GET_MESSAGE_BACKLOG));
                         break;
-                    case SEND_MESSAGE_TO_BACKLOG:
+                    case SEND_MESSAGE_TO_BACKLOG: // saada sõnumid serverile, et hiljem edasi saata
                         out.writeInt(ResponseCodes.getValue(ResponseCodes.SEND_MESSAGE_TO_BACKLOG));
                         break;
-                    default:
-                        out.writeInt(ResponseCodes.getValue(ResponseCodes.RESPONSE_CODE_NOT_FOUND)); // ei ole olemas sellist tüüpi
+                    default: // tundmatu tüüp
+                        out.writeInt(ResponseCodes.getValue(ResponseCodes.RESPONSE_CODE_NOT_FOUND));
                 }
 
                 int tagastusKood = in.readInt(); // oleku kontrolliks
@@ -50,7 +50,6 @@ public class Client1 {
                 System.out.println("Tagastuskood: OK.");
 
                 String sõnumiSisu = args[jälgimiseks++]; // sõnum või failinimi
-                System.out.println(infoTüüp + ", " + sõnumiSisu);
                 ResponseCodes tagastusKood2;
                 switch (infoTüüp) {
                     case SEND_ECHO: // kasutaja saadab echo-sõnumi
