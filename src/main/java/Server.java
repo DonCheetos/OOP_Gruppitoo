@@ -21,6 +21,7 @@ public class Server {
 
         try (ServerSocket ss = new ServerSocket(pordiNumber)) { // hõivab porti, kus hakkab toimetama
             System.out.println("Server ootab ühendusi pordil: " + pordiNumber + ".");
+            System.out.println("----------------");
             while (true) {
                 Socket socket = ss.accept();
                 System.out.println(kliendiID + 1 + ". klient on serveriga ühendatud.");
@@ -52,6 +53,7 @@ class ParalleelTöötlemiseks implements Runnable {
             System.out.println(mitmesKlient + 1 + ". kliendilt oodatud sõnumite arv: " + sõnumiteArv + ".");
 
             for (int i = 0; i < sõnumiteArv / 2; i++) {
+                System.out.println();
                 ResponseCodes sõnumiTüüp = ResponseCodes.getCode(in.readInt());
 
                 switch (sõnumiTüüp) {
@@ -95,7 +97,7 @@ class ParalleelTöötlemiseks implements Runnable {
 
                         int sõnumiteKogus = kasutajaleSaadetudSõnumid.size();
                         out.writeInt(sõnumiteKogus);
-                        System.out.println("Kasutajale on saadetud " + sõnumiteKogus + " sõnumit.");
+                        System.out.println("Kasutajale on saadetud " + sõnumiteKogus + " sõnum(it).");
 
                         for (String sõnum : kasutajaleSaadetudSõnumid)
                             out.writeUTF(sõnum);
@@ -132,6 +134,7 @@ class ParalleelTöötlemiseks implements Runnable {
             throw new RuntimeException(e);
         } finally {
             System.out.println(mitmesKlient + 1 + ". klient lõpetab ühenduse.");
+            System.out.println("----------------");
         }
     }
 }

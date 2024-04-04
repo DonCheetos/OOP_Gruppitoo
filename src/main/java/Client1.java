@@ -22,6 +22,7 @@ public class Client1 {
 
             int jälgimiseks = 0;
             while (sõnumiSuurus != jälgimiseks) {
+                System.out.println();
                 ResponseCodes infoTüüp = ResponseCodes.stringToCode(args[jälgimiseks++]); // tüübi info
 
                 // 1 ja 2 määratud request tüübiks
