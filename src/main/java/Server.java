@@ -56,7 +56,7 @@ class ParalleelTöötlemiseks implements Runnable {
 
                 switch (sõnumiTüüp) {
                     case SEND_ECHO:
-                        out.writeInt(ResponseCodes.OK.ordinal()); // kinnitab, et kõik on korras, võib jätkata
+                        out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // kinnitab, et kõik on korras, võib jätkata
 
                         String echoSõnum = in.readUTF();
                         System.out.println(mitmesKlient + 1 + ". klient saatis sõnumi: \"" + echoSõnum + "\".");
@@ -65,24 +65,24 @@ class ParalleelTöötlemiseks implements Runnable {
                         break;
 
                     case GET_FILE:
-                        out.writeInt(ResponseCodes.OK.ordinal());
+                        out.writeInt(ResponseCodes.getValue(ResponseCodes.OK));
 
                         String failiNimi = in.readUTF();
                         System.out.println(mitmesKlient + 1 + ". klient tahab saada faili: \"" + failiNimi + "\".");
 
                         try (InputStream failStream = new FileInputStream(failiNimi)) {
-                            out.writeInt(ResponseCodes.OK.ordinal()); // fail leitud
+                            out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // fail leitud
                             byte[] fail = failStream.readAllBytes();
                             out.writeInt(fail.length);
                             out.write(fail);
                         } catch (FileNotFoundException e) {
                             System.out.println(mitmesKlient + 1 + ". kliendile saadetakse veateade, kuna faili (\"" + failiNimi + "\") ei leitud.");
-                            out.writeInt(ResponseCodes.FILE_NOT_FOUND.ordinal()); // saadab kliendile teate, et faili ei leitud
+                            out.writeInt(ResponseCodes.getValue(ResponseCodes.FILE_NOT_FOUND)); // saadab kliendile teate, et faili ei leitud
                         }
                         break;
 
                     case GET_MESSAGE_BACKLOG:
-                        out.writeInt(ResponseCodes.OK.ordinal()); // kõik korras
+                        out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // kõik korras
 
                         System.out.println("Edastan kliendile sõnumid, mis teised on talle vahepeal saatnud.");
 
@@ -104,17 +104,17 @@ class ParalleelTöötlemiseks implements Runnable {
                         break;
 
                     case SEND_MESSAGE_TO_BACKLOG:
-                        out.writeInt(ResponseCodes.OK.ordinal()); // kõik korras
+                        out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // kõik korras
 
                         String sihtKasutaja = in.readUTF(); // Loeb sihtkasutaja nime
                         System.out.println("Sihkasutaja: " + sihtKasutaja + ".");
 
                         if (!sõnumidKasutajale.containsKey(sihtKasutaja)) { // !!! kas siin ei peaks mitte uut kasutajat looma ja talle jätma !!!
-                            out.writeInt(ResponseCodes.USER_NOT_FOUND.ordinal()); // kasutajat ei leitud
+                            out.writeInt(ResponseCodes.getValue(ResponseCodes.USER_NOT_FOUND)); // kasutajat ei leitud
                             break;
                         }
 
-                        out.writeInt(ResponseCodes.OK.ordinal()); // kõik korras, kasutaja olemas
+                        out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // kõik korras, kasutaja olemas
                         String sõnum = in.readUTF();
 
                         sõnumidKasutajale.get(sihtKasutaja).add(sõnum);
@@ -124,7 +124,7 @@ class ParalleelTöötlemiseks implements Runnable {
 
                     default:
                         System.out.println(mitmesKlient + 1 + ". kliendile saadetakse veateate, kuna request tüüp on vale: " + sõnumiTüüp + ".");
-                        out.writeInt(ResponseCodes.RESPONSE_CODE_NOT_FOUND.ordinal()); // antud tüüp oli vale
+                        out.writeInt(ResponseCodes.getValue(ResponseCodes.RESPONSE_CODE_NOT_FOUND)); // antud tüüp oli vale
                         in.readUTF(); // paari välja puhastamiseks
                 }
             }

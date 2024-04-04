@@ -1,6 +1,7 @@
 import java.io.*;
 import java.net.Socket;
 
+// käsurida: echo Tere writesonum "Sõnum, see on sõnum"
 public class Client1 {
     public static void main(String[] args) throws IOException {
         int pordiNumber = 1337;
@@ -41,7 +42,7 @@ public class Client1 {
                         out.writeInt(ResponseCodes.RESPONSE_CODE_NOT_FOUND.ordinal()); // ei ole olemas sellist tüüpi
                 }
 
-                int tagastusKood = ResponseCodes.getValue(ResponseCodes.getCode(in.readInt())); // oleku kontrolliks
+                int tagastusKood = in.readInt(); // oleku kontrolliks
                 if (tagastusKood < 0) { // ERROR
                     System.out.println("Tagastuskood: " + ResponseCodes.getCode(tagastusKood) + ".");
                     throw new RuntimeException("Tagastuskoodi viga: " + ResponseCodes.getCode(tagastusKood));
@@ -49,6 +50,7 @@ public class Client1 {
                 System.out.println("Tagastuskood: OK.");
 
                 String sõnumiSisu = args[jälgimiseks++]; // sõnum või failinimi
+                System.out.println(infoTüüp + ", " + sõnumiSisu);
                 ResponseCodes tagastusKood2;
                 switch (infoTüüp) {
                     case SEND_ECHO: // kasutaja saadab echo-sõnumi
