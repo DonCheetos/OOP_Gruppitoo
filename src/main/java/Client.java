@@ -1,8 +1,7 @@
 import java.io.*;
 import java.net.Socket;
-import java.util.Arrays;
 
-// käsurida: 0 echo Tere writesonum 0 "Sõnum, see on sõnum" getsonum file "test.txt"
+// käsurida: 0 echo Tere sendsonum 0 "Sõnum, see on sõnum" getsonum getfile "test.txt" sendfile "võrk_test.txt"
 public class Client {
     public static void main(String[] args) throws IOException {
         int pordiNumber = 1337;
@@ -10,6 +9,7 @@ public class Client {
 
         if (sõnumiSuurus < 1) {
             System.out.println("Käsureal peab olema vähemalt üks argument: kasutaja ID.\nSee peab olema alati kõige esimene argument!");
+            ResponseCodes.koodid();
             throw new RuntimeException("Käsurea viga.");
         }
         int kasutajaID;
@@ -17,6 +17,7 @@ public class Client {
             kasutajaID = Integer.parseInt(args[0]);
         } catch (NumberFormatException e) {
             System.out.println("Esimene argument peab olema kasutaja id! Selle asemel oli: \"" + args[0] + "\".");
+            ResponseCodes.koodid();
             throw e;
         }
 
@@ -33,7 +34,6 @@ public class Client {
                 System.out.println();
                 ResponseCodes infoTüüp = ResponseCodes.stringToCode(args[jälgimiseks++]); // tüübi info
 
-                // 1 ja 2 määratud request tüübiks
                 switch (infoTüüp) {
                     case SEND_ECHO: // saada echo-sõnum
                         out.writeInt(ResponseCodes.getValue(ResponseCodes.SEND_ECHO));
@@ -62,6 +62,7 @@ public class Client {
                 System.out.println("Tagastuskood: OK.");
 
                 String sõnumiSisu = args[jälgimiseks++]; // sõnum või failinimi
+                String failiNimi;
                 ResponseCodes tagastusKood2;
                 switch (infoTüüp) {
                     case SEND_ECHO: // kasutaja saadab echo-sõnumi
@@ -86,43 +87,38 @@ public class Client {
                         } catch (NumberFormatException e) {
                             System.out.println("Saaja ID peab olema arv. Selle asemel oli: \"" + sõnumiSisu + "\".");
                         }
-                        if (saajaID < 0){
+                        if (saajaID < 0) {
                             System.out.println("Saaja ID viga: ID=" + saajaID + ".");
                             throw new RuntimeException("ID viga: ID=" + saajaID);
                         }
                         System.out.println(ResponseCodes.SEND_MESSAGE_TO_BACKLOG + ": \n    Sõnumi saaja: ID=" + saajaID + ".");
                         out.writeInt(saajaID); // saaja ID serverile saatmine
 
-//                        tagastusKood2 = ResponseCodes.getCode(in.readInt());
-//                        if (tagastusKood2 == ResponseCodes.USER_NOT_FOUND) { // kui sellist kasutajat ei leitud
-//                            System.out.println("Sellist kasutajat pole: ID=" + saajaID + ".");
-//                            break;
-////                        }
-
                         sõnumiSisu = args[jälgimiseks++];
                         System.out.println("    Sõnumi sisu: \"" + sõnumiSisu + "\"");
                         out.writeUTF(sõnumiSisu); // kirjutab sõnumi välja
                         break;
+
                     case SEND_FILE_TO_SERVER:
-                        out.writeUTF(sõnumiSisu);//failinimi
-                        try(FileInputStream fis = new FileInputStream(sõnumiSisu)){
-                            byte[] fail=fis.readAllBytes();
-                            out.writeInt(fail.length);//failisuurus
-                            System.out.println("Saatsin faili "+sõnumiSisu+" suurusega:"+fail.length);
-                            try{
-                                out.write(fail);
+                        failiNimi = sõnumiSisu;
+                        System.out.println(ResponseCodes.SEND_FILE_TO_SERVER + ": \"" + failiNimi + "\".");
+                        out.writeUTF(failiNimi); // saadab faili nime
 
-                            }catch (SocketException e){
-                                System.out.println("kirjutamise viga, faili:"+sõnumiSisu+" ei õnnestunud kirjutada!");
-                                //throw e;
-                            }
-
+                        try (InputStream failStream = new FileInputStream("src/main/resources/klient_" + kasutajaID + "/" + failiNimi)) {
+                            out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // fail leitud
+                            System.out.print("Fail leitud... ");
+                            byte[] fail = failStream.readAllBytes();
+                            out.writeInt(fail.length);
+                            out.write(fail);
+                            System.out.println("saadetud.");
+                        } catch (FileNotFoundException e) {
+                            System.out.println("Kliendile saadetakse veateade, kuna faili (\"" + failiNimi + "\") ei leitud.");
+                            out.writeInt(ResponseCodes.getValue(ResponseCodes.FILE_NOT_FOUND)); // saadab kliendile teate, et faili ei leitud
                         }
-
                         break;
 
                     case GET_FILE: // küsib serverilt faili
-                        String failiNimi = sõnumiSisu;
+                        failiNimi = sõnumiSisu;
                         System.out.println(ResponseCodes.GET_FILE + ": \"" + failiNimi + "\"");
                         out.writeUTF(failiNimi); // saadab faili nime
 
