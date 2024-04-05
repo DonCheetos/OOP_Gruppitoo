@@ -65,11 +65,13 @@ public class Client {
                 ResponseCodes tagastusKood2;
                 switch (infoTüüp) {
                     case SEND_ECHO: // kasutaja saadab echo-sõnumi
+                        System.out.println(ResponseCodes.SEND_ECHO + ": \"" + sõnumiSisu + "\"");
                         out.writeUTF(sõnumiSisu);
-                        System.out.println("Echo: \"" + in.readUTF() + "\".");
+                        System.out.println("Serverilt saadud echo-sõnum: \"" + in.readUTF() + "\".");
                         break;
 
                     case GET_MESSAGE_BACKLOG: // kasutaja küsib sõnumeid serverilt
+                        System.out.println(ResponseCodes.GET_MESSAGE_BACKLOG);
                         String kasutajaID = sõnumiSisu; // loeb käasureal kasutajanime
                         out.writeUTF(kasutajaID);
                         int sõnumiteArv = in.readInt(); // sõnumite arv
@@ -80,6 +82,7 @@ public class Client {
 
                     case SEND_MESSAGE_TO_BACKLOG: // kirjutab mingi sõnumi kasutajale, käasureal järjekord 'requestTüüp kasutaja sõnum'
                         String saajaID = sõnumiSisu; // loeb käasureal kasutajanime
+                        System.out.println(ResponseCodes.SEND_MESSAGE_TO_BACKLOG + ": \n    Sõnumi saaja: \"" + saajaID + "\"");
                         out.writeUTF(saajaID); // kasutaja määramine
 
                         tagastusKood2 = ResponseCodes.getCode(in.readInt());
@@ -89,6 +92,7 @@ public class Client {
                         }
 
                         sõnumiSisu = args[jälgimiseks++];
+                        System.out.println("    Sõnumi sisu: \"" + sõnumiSisu + "\"");
                         out.writeUTF(sõnumiSisu); // kirjutab sõnumi välja
                         break;
                     case SEND_FILE_TO_SERVER:
@@ -110,11 +114,13 @@ public class Client {
                         break;
 
                     case GET_FILE: // küsib serverilt faili
-                        out.writeUTF(sõnumiSisu); // saadab faili nime
+                        String failiNimi = sõnumiSisu;
+                        System.out.println(ResponseCodes.GET_FILE + ": \"" + failiNimi + "\"");
+                        out.writeUTF(failiNimi); // saadab faili nime
 
                         tagastusKood2 = ResponseCodes.getCode(in.readInt());
                         if (tagastusKood2 == ResponseCodes.FILE_NOT_FOUND) {
-                            System.out.println("Faili (\"" + sõnumiSisu + "\") ei leitud.");
+                            System.out.println("Faili (\"" + failiNimi + "\") ei leitud.");
                             break;
                         }
 
@@ -139,7 +145,7 @@ public class Client {
                 }
             }
         } finally {
-            System.out.println("Serverist lahti ühendatud.");
+            System.out.println("\nServerist lahti ühendatud.");
         }
     }
 }
