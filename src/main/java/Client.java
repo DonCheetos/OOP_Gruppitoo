@@ -1,27 +1,34 @@
 import java.io.*;
 import java.net.Socket;
+import java.util.Arrays;
 
-// käsurida: echo Tere writesonum "Sõnum, see on sõnum"
+// käsurida: 0 echo Tere writesonum 0 "Sõnum, see on sõnum" getsonum file "test.txt"
 public class Client {
     public static void main(String[] args) throws IOException {
         int pordiNumber = 1337;
         int sõnumiSuurus = args.length;
-//        String kasutajaID = "Kasutaja1";
 
-        /*
-        if (sõnumiSuurus % 2 == 1) {
-            System.out.println("Käsurea sisend peab olema formaadis: käsk sisu käsk sisu ...\nEhk käsk ja sisu käivad koos.\nEhk tühikuga eraldatud sõnesid peab alati olema PAARISARV!");
+        if (sõnumiSuurus < 1) {
+            System.out.println("Käsureal peab olema vähemalt üks argument: kasutaja ID.\nSee peab olema alati kõige esimene argument!");
             throw new RuntimeException("Käsurea viga.");
-        } */
+        }
+        int kasutajaID;
+        try {
+            kasutajaID = Integer.parseInt(args[0]);
+        } catch (NumberFormatException e) {
+            System.out.println("Esimene argument peab olema kasutaja id! Selle asemel oli: \"" + args[0] + "\".");
+            throw e;
+        }
 
         try (Socket socket = new Socket("localhost", pordiNumber);
              DataInputStream in = new DataInputStream(socket.getInputStream());
              DataOutputStream out = new DataOutputStream(socket.getOutputStream())) {
             System.out.println("Ühendatud serveriga pordil: " + pordiNumber + ".");
 
+            out.writeInt(kasutajaID); // serverile kasutaja ID andmine
             out.writeInt(sõnumiSuurus); // serverile sõnumite koguse andmine
 
-            int jälgimiseks = 0;
+            int jälgimiseks = 1;
             while (sõnumiSuurus != jälgimiseks) {
                 System.out.println();
                 ResponseCodes infoTüüp = ResponseCodes.stringToCode(args[jälgimiseks++]); // tüübi info
@@ -61,9 +68,8 @@ public class Client {
                         break;
 
                     case GET_MESSAGE_BACKLOG: // kasutaja küsib sõnumeid serverilt
+                        jälgimiseks--; // kuna sellel käsul pole ühtegi argumenti
                         System.out.println(ResponseCodes.GET_MESSAGE_BACKLOG);
-                        String kasutajaID = sõnumiSisu; // loeb käasureal kasutajanime
-                        out.writeUTF(kasutajaID);
                         int sõnumiteArv = in.readInt(); // sõnumite arv
                         System.out.println("Saadud sõnumite arv: " + sõnumiteArv + ".");
                         for (int i = 0; i < sõnumiteArv; i++) // loeb kõik sõnumeid
@@ -71,15 +77,24 @@ public class Client {
                         break;
 
                     case SEND_MESSAGE_TO_BACKLOG: // kirjutab mingi sõnumi kasutajale, käasureal järjekord 'requestTüüp kasutaja sõnum'
-                        String saajaID = sõnumiSisu; // loeb käasureal kasutajanime
-                        System.out.println(ResponseCodes.SEND_MESSAGE_TO_BACKLOG + ": \n    Sõnumi saaja: \"" + saajaID + "\"");
-                        out.writeUTF(saajaID); // kasutaja määramine
-
-                        tagastusKood2 = ResponseCodes.getCode(in.readInt());
-                        if (tagastusKood2 == ResponseCodes.USER_NOT_FOUND) { // kui sellist kasutajat ei leitud
-                            System.out.println("Sellist kasutajat pole: " + saajaID + ".");
-                            break;
+                        int saajaID = -1;
+                        try {
+                            saajaID = Integer.parseInt(sõnumiSisu); // loeb käasureal kasutajanime
+                        } catch (NumberFormatException e) {
+                            System.out.println("Saaja ID peab olema arv. Selle asemel oli: \"" + sõnumiSisu + "\".");
                         }
+                        if (saajaID < 0){
+                            System.out.println("Saaja ID viga: ID=" + saajaID + ".");
+                            throw new RuntimeException("ID viga: ID=" + saajaID);
+                        }
+                        System.out.println(ResponseCodes.SEND_MESSAGE_TO_BACKLOG + ": \n    Sõnumi saaja: ID=" + saajaID + ".");
+                        out.writeInt(saajaID); // saaja ID serverile saatmine
+
+//                        tagastusKood2 = ResponseCodes.getCode(in.readInt());
+//                        if (tagastusKood2 == ResponseCodes.USER_NOT_FOUND) { // kui sellist kasutajat ei leitud
+//                            System.out.println("Sellist kasutajat pole: ID=" + saajaID + ".");
+//                            break;
+////                        }
 
                         sõnumiSisu = args[jälgimiseks++];
                         System.out.println("    Sõnumi sisu: \"" + sõnumiSisu + "\"");
@@ -99,11 +114,18 @@ public class Client {
 
                         System.out.print("Fail leitud... ");
                         int failiSuurus = in.readInt();
-                        try (OutputStream uusFail = new FileOutputStream(failiNimi)) {
+                        if (new File("src/main/resources/klient_" + kasutajaID).mkdirs())
+                            System.out.println("Lõin kasutaja jaoks uue kausta: \"src/main/resources/klient_" + kasutajaID + "\".");
+                        File võrguFail = new File("src/main/resources/klient_" + kasutajaID + "/võrk_" + failiNimi);
+                        if (võrguFail.createNewFile())
+                            System.out.println("Lõin kasutaja jaoks uue faili: \"src/main/resources/klient_" + kasutajaID + "/võrk_" + failiNimi + "\".");
+                        try (OutputStream uusFail = new FileOutputStream(võrguFail, false)) {
                             byte[] sisu = new byte[failiSuurus];
                             in.readFully(sisu);
                             uusFail.write(sisu); // kirjuta võrjust saadud andmed oma arvutisse uude faili
                             System.out.println("salvestatud.");
+                        } catch (IOException e) {
+                            System.out.println("faili ei õnnestunud luua.");
                         }
                 }
             }

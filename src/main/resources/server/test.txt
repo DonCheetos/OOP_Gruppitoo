@@ -1,0 +1,1 @@
+Kui see fail jõudis sinu arvutisse nimega "võrk_test.txt", siis on kõik korras.
