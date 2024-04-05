@@ -146,6 +146,29 @@ class ParalleelTöötlemiseks implements Runnable {
                         System.out.println("Salvestasin tekstisisu.");
                         System.out.println("Sõnumid kasutajale (ID=" + sihtKasutajaID + "): \"" + laekunudSõnumid.get(sihtKasutajaID) + "\".");
                         break;
+                    case SEND_FILE_TO_SERVER:
+                        out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // kõik korras
+                        String sisenevaFailiNimi = in.readUTF(); jälgimiskes++;
+                        System.out.println("sain faili:"+sisenevaFailiNimi+" kirjutan kausta");
+                        // Find the last index of '/' or '\\'
+                        int lastIndex = sisenevaFailiNimi.lastIndexOf('/');
+                        if (lastIndex == -1) {
+                            lastIndex = sisenevaFailiNimi.lastIndexOf('\\');
+                        }
+                        // Extract the filename
+                        String filename = sisenevaFailiNimi.substring(lastIndex + 1);
+
+                        int failisuurus=in.readInt();
+                        try(FileOutputStream fos = new FileOutputStream("received/"+filename)){
+                            //System.out.println("failisuurus on:"+failisuurus);
+                            fos.write(in.readNBytes(failisuurus));
+                            out.writeInt(0);
+                        }catch (IOException e){
+                            System.out.println("ei kirjutanud edukalt");
+                            System.out.println(e.getMessage());
+                            out.writeInt(-5);
+                        }
+                        break;
 
                     default:
                         System.out.println(ResponseCodes.RESPONSE_CODE_NOT_FOUND);

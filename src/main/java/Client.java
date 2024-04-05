@@ -47,6 +47,9 @@ public class Client {
                     case SEND_MESSAGE_TO_BACKLOG: // saada sõnumid serverile, et hiljem edasi saata
                         out.writeInt(ResponseCodes.getValue(ResponseCodes.SEND_MESSAGE_TO_BACKLOG));
                         break;
+                    case SEND_FILE_TO_SERVER:
+                        out.writeInt(ResponseCodes.getValue(ResponseCodes.SEND_FILE_TO_SERVER));
+                        break;
                     default: // tundmatu tüüp
                         out.writeInt(ResponseCodes.getValue(ResponseCodes.RESPONSE_CODE_NOT_FOUND));
                 }
@@ -100,6 +103,23 @@ public class Client {
                         System.out.println("    Sõnumi sisu: \"" + sõnumiSisu + "\"");
                         out.writeUTF(sõnumiSisu); // kirjutab sõnumi välja
                         break;
+                    case SEND_FILE_TO_SERVER:
+                        out.writeUTF(sõnumiSisu);//failinimi
+                        try(FileInputStream fis = new FileInputStream(sõnumiSisu)){
+                            byte[] fail=fis.readAllBytes();
+                            out.writeInt(fail.length);//failisuurus
+                            System.out.println("Saatsin faili "+sõnumiSisu+" suurusega:"+fail.length);
+                            try{
+                                out.write(fail);
+
+                            }catch (SocketException e){
+                                System.out.println("kirjutamise viga, faili:"+sõnumiSisu+" ei õnnestunud kirjutada!");
+                                //throw e;
+                            }
+
+                        }
+
+                        break;
 
                     case GET_FILE: // küsib serverilt faili
                         String failiNimi = sõnumiSisu;
@@ -122,7 +142,7 @@ public class Client {
                         try (OutputStream uusFail = new FileOutputStream(võrguFail, false)) {
                             byte[] sisu = new byte[failiSuurus];
                             in.readFully(sisu);
-                            uusFail.write(sisu); // kirjuta võrjust saadud andmed oma arvutisse uude faili
+                            uusFail.write(sisu); // kirjuta võrgust saadud andmed oma arvutisse uude faili
                             System.out.println("salvestatud.");
                         } catch (IOException e) {
                             System.out.println("faili ei õnnestunud luua.");
