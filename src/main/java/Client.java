@@ -1,11 +1,18 @@
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketException;
 
 // käsurida: echo Tere writesonum "Sõnum, see on sõnum"
 public class Client {
     public static void main(String[] args) throws IOException {
         int pordiNumber = 1337;
         int sõnumiSuurus = args.length;
+        if(args.length==0){//ütlen võimalikud käsud kui midagi ei anta ette
+            System.out.println("Võimalikud sisendid on{");
+            ResponseCodes.koodid();//väljastab sisendid
+            System.out.println("}");
+            System.exit(1);//lõpetab koodi kuna midagi edasi ei tehta
+        }
         //String kasutajaID = "Kasutaja1";
 
         /*
@@ -39,6 +46,9 @@ public class Client {
                         break;
                     case SEND_MESSAGE_TO_BACKLOG: // saada sõnumid serverile, et hiljem edasi saata
                         out.writeInt(ResponseCodes.getValue(ResponseCodes.SEND_MESSAGE_TO_BACKLOG));
+                        break;
+                    case SEND_FILE_TO_SERVER:
+                        out.writeInt(ResponseCodes.getValue(ResponseCodes.SEND_FILE_TO_SERVER));
                         break;
                     default: // tundmatu tüüp
                         out.writeInt(ResponseCodes.getValue(ResponseCodes.RESPONSE_CODE_NOT_FOUND));
@@ -81,6 +91,23 @@ public class Client {
                         sõnumiSisu = args[jälgimiseks++];
                         out.writeUTF(sõnumiSisu); // kirjutab sõnumi välja
                         break;
+                    case SEND_FILE_TO_SERVER:
+                        out.writeUTF(sõnumiSisu);//failinimi
+                        try(FileInputStream fis = new FileInputStream(sõnumiSisu)){
+                            byte[] fail=fis.readAllBytes();
+                            out.writeInt(fail.length);//failisuurus
+                            System.out.println("Saatsin faili "+sõnumiSisu+" suurusega:"+fail.length);
+                            try{
+                                out.write(fail);
+
+                            }catch (SocketException e){
+                                System.out.println("kirjutamise viga, faili:"+sõnumiSisu+" ei õnnestunud kirjutada!");
+                                //throw e;
+                            }
+
+                        }
+
+                        break;
 
                     case GET_FILE: // küsib serverilt faili
                         out.writeUTF(sõnumiSisu); // saadab faili nime
@@ -93,10 +120,20 @@ public class Client {
 
                         System.out.print("Fail leitud... ");
                         int failiSuurus = in.readInt();
-                        try (OutputStream uusFail = new FileOutputStream(sõnumiSisu)) {
+
+                        // Find the last index of '/' or '\\'
+                        int lastIndex = sõnumiSisu.lastIndexOf('/');
+                        if (lastIndex == -1) {
+                            lastIndex = sõnumiSisu.lastIndexOf('\\');
+                        }
+
+                        // Extract the filename
+                        String filename = sõnumiSisu.substring(lastIndex + 1);
+
+                        try (OutputStream uusFail = new FileOutputStream("received/"+filename)) {
                             byte[] sisu = new byte[failiSuurus];
                             in.readFully(sisu);
-                            uusFail.write(sisu); // kirjuta võrjust saadud andmed oma arvutisse uude faili
+                            uusFail.write(sisu); // kirjuta võrgust saadud andmed oma arvutisse uude faili
                             System.out.println("salvestatud.");
                         }
                 }
