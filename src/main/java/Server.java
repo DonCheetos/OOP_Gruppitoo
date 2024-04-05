@@ -58,6 +58,7 @@ class ParalleelTöötlemiseks implements Runnable {
 
                 switch (sõnumiTüüp) {
                     case SEND_ECHO:
+                        System.out.println(ResponseCodes.SEND_ECHO);
                         out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // kinnitab, et kõik on korras, võib jätkata
 
                         String echoSõnum = in.readUTF();
@@ -67,6 +68,7 @@ class ParalleelTöötlemiseks implements Runnable {
                         break;
 
                     case GET_FILE:
+                        System.out.println(ResponseCodes.GET_FILE);
                         out.writeInt(ResponseCodes.getValue(ResponseCodes.OK));
 
                         String failiNimi = in.readUTF();
@@ -84,11 +86,11 @@ class ParalleelTöötlemiseks implements Runnable {
                         break;
 
                     case GET_MESSAGE_BACKLOG:
+                        System.out.println(ResponseCodes.GET_MESSAGE_BACKLOG);
                         out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // kõik korras
 
-                        System.out.println("Edastan kliendile sõnumid, mis teised on talle vahepeal saatnud.");
-
                         String kasutajaID = in.readUTF();
+                        System.out.println("Edastan kliendile (" + kasutajaID + ") sõnumi(d), mis teised on talle vahepeal saatnud.");
                         List<String> kasutajaleSaadetudSõnumid = sõnumidKasutajale.get(kasutajaID);
                         if (kasutajaleSaadetudSõnumid == null) {
                             out.writeInt(0);
@@ -97,7 +99,7 @@ class ParalleelTöötlemiseks implements Runnable {
 
                         int sõnumiteKogus = kasutajaleSaadetudSõnumid.size();
                         out.writeInt(sõnumiteKogus);
-                        System.out.println("Kasutajale on saadetud " + sõnumiteKogus + " sõnum(it).");
+                        System.out.println("kliendile on saadetud " + sõnumiteKogus + " sõnum(it).");
 
                         for (String sõnum : kasutajaleSaadetudSõnumid)
                             out.writeUTF(sõnum);
@@ -106,6 +108,7 @@ class ParalleelTöötlemiseks implements Runnable {
                         break;
 
                     case SEND_MESSAGE_TO_BACKLOG:
+                        System.out.println(ResponseCodes.GET_MESSAGE_BACKLOG);
                         out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // kõik korras
 
                         String sihtKasutaja = in.readUTF(); // Loeb sihtkasutaja nime
@@ -125,6 +128,7 @@ class ParalleelTöötlemiseks implements Runnable {
                         break;
 
                     default:
+                        System.out.println(ResponseCodes.RESPONSE_CODE_NOT_FOUND);
                         System.out.println(mitmesKlient + 1 + ". kliendile saadetakse veateate, kuna request tüüp on vale: " + sõnumiTüüp + ".");
                         out.writeInt(ResponseCodes.getValue(ResponseCodes.RESPONSE_CODE_NOT_FOUND)); // antud tüüp oli vale
                         in.readUTF(); // paari välja puhastamiseks
@@ -133,6 +137,7 @@ class ParalleelTöötlemiseks implements Runnable {
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
+            System.out.println();
             System.out.println(mitmesKlient + 1 + ". klient lõpetab ühenduse.");
             System.out.println("----------------");
         }
