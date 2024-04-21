@@ -88,6 +88,7 @@ public class Client {
                         tagastusKood2 = ResponseCodes.getCode(in.readInt());
                         if (tagastusKood2 == ResponseCodes.USER_NOT_FOUND) { // kui sellist kasutajat ei leitud
                             System.out.println("Sellist kasutajat pole: " + saajaID + ".");
+                            jälgimiseks++;//kood viskas vea kui kasutajat ei leidnud
                             break;
                         }
 
