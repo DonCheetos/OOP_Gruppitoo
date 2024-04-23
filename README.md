@@ -4,7 +4,11 @@
 Chati programm
 
 ## Liikmed
-Maksim Kelus, Kaur Lõhmus, Rasmus Valk
+Maksim Kelus - DonCheetos, 
+ 
+Kaur Lõhmus - energy11a, 
+
+Rasmus Valk - Sumsar86
 
 ## Lühikirjeldus
 Programm võimaldab inimeselt inimesele ja inimeselt gruppile suhtlust, nii serveri vahendusel kui ka otse.
