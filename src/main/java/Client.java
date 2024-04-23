@@ -76,8 +76,17 @@ public class Client {
                         out.writeUTF(kasutajaID);
                         int sõnumiteArv = in.readInt(); // sõnumite arv
                         System.out.println("Saadud sõnumite arv: " + sõnumiteArv + ".");
-                        for (int i = 0; i < sõnumiteArv; i++) // loeb kõik sõnumeid
-                            System.out.println("Saadud sõnum: \"" + in.readUTF() + "\".");
+                        for (int i = 0; i < sõnumiteArv; i++) { // loeb kõik sõnumeid
+                            String sõnum = in.readUTF();
+                            System.out.println("Saadud sõnum: \"" + sõnum + "\".");
+                            try { // Kirjutab faili ka tulemusi mille nimeks saab "'kasutajaID'_msg.txt", praegu kasutatakse seda, et saaks lihtsamini kuvada sõnumeid GUI-s
+                                FileUtil.writeToFileSave(kasutajaID+"_msg.txt", sõnum);
+                                System.out.println("Sõnum on lisatud faili.");
+                            } catch (IOException e) {
+                                System.err.println("Faili kirjutamisel tekkis viga: " + e.getMessage());
+                            }
+                        }
+
                         break;
 
                     case SEND_MESSAGE_TO_BACKLOG: // kirjutab mingi sõnumi kasutajale, käasureal järjekord 'requestTüüp kasutaja sõnum'
@@ -147,6 +156,12 @@ public class Client {
             }
         } finally {
             System.out.println("\nServerist lahti ühendatud.");
+        }
+    }
+    public static void writeToFileSaved(String filename, String message) throws IOException { // kirjutab sõnumeid mida saadi
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename, true))) {
+            writer.write(message);
+            writer.newLine(); // Lisa uus rida .e. taane
         }
     }
 }

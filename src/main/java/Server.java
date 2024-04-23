@@ -116,9 +116,12 @@ class ParalleelTöötlemiseks implements Runnable {
                         System.out.println("Sihkasutaja: " + sihtKasutaja + ".");
 
                         if (!sõnumidKasutajale.containsKey(sihtKasutaja)) { // !!! kas siin ei peaks mitte uut kasutajat looma ja talle jätma !!!
-                            out.writeInt(ResponseCodes.getValue(ResponseCodes.USER_NOT_FOUND)); // kasutajat ei leitud
+                            /*out.writeInt(ResponseCodes.getValue(ResponseCodes.USER_NOT_FOUND)); // kasutajat ei leitud
                             jälgimiskes++;
                             break;
+
+                             */ // olukord kus võib olla mitte eksisteeriv kasutaja
+                            sõnumidKasutajale.put(sihtKasutaja, new ArrayList<>());
                         }
 
                         out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // kõik korras, kasutaja olemas
