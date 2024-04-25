@@ -21,7 +21,7 @@ public class Server {
 
         try (ServerSocket ss = new ServerSocket(pordiNumber)) { // hõivab porti, kus hakkab toimetama
             System.out.println("Server ootab ühendusi pordil: " + pordiNumber + ".");
-            System.out.println("----------------");
+            System.out.println("-".repeat(50));
             while (true) {
                 Socket socket = ss.accept();
                 System.out.println(kliendiID + 1 + ". klient on serveriga ühendatud.");
@@ -57,109 +57,37 @@ class ParalleelTöötlemiseks implements Runnable {
                 System.out.println();
                 ResponseCodes sõnumiTüüp = ResponseCodes.getCode(in.readInt()); jälgimiskes++;
 
-                switch (sõnumiTüüp) {
+                switch (sõnumiTüüp) { // teostatakse serverile saadetud päringuid
                     case SEND_ECHO:
-                        System.out.println(ResponseCodes.SEND_ECHO);
-                        out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // kinnitab, et kõik on korras, võib jätkata
-
-                        String echoSõnum = in.readUTF(); jälgimiskes++;
-                        System.out.println(mitmesKlient + 1 + ". klient saatis sõnumi: \"" + echoSõnum + "\".");
-
-                        out.writeUTF(echoSõnum);
+                        Server_Operations.sendEcho(in, out, mitmesKlient);
+                        jälgimiskes++;
                         break;
 
                     case GET_FILE:
-                        System.out.println(ResponseCodes.GET_FILE);
-                        out.writeInt(ResponseCodes.getValue(ResponseCodes.OK));
-
-                        String failiNimi = in.readUTF(); jälgimiskes++;//faili path+nimi
-                        System.out.println(mitmesKlient + 1 + ". klient tahab saada faili: \"" + failiNimi + "\".");
-
-                        try (InputStream failStream = new FileInputStream(failiNimi)) {
-                            out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // fail leitud
-                            byte[] fail = failStream.readAllBytes();
-                            out.writeInt(fail.length);
-                            out.write(fail);
-                        } catch (FileNotFoundException e) {
-                            System.out.println(mitmesKlient + 1 + ". kliendile saadetakse veateade, kuna faili (\"" + failiNimi + "\") ei leitud.");
-                            out.writeInt(ResponseCodes.getValue(ResponseCodes.FILE_NOT_FOUND)); // saadab kliendile teate, et faili ei leitud
-                        }
+                        Server_Operations.getFile(in, out, mitmesKlient);
+                        jälgimiskes++;
                         break;
 
                     case GET_MESSAGE_BACKLOG:
-                        System.out.println(ResponseCodes.GET_MESSAGE_BACKLOG);
-                        out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // kõik korras
-
-                        String kasutajaID = in.readUTF(); jälgimiskes++;
-                        System.out.println("Edastan kliendile (" + kasutajaID + ") sõnumi(d), mis teised on talle vahepeal saatnud.");
-                        List<String> kasutajaleSaadetudSõnumid = sõnumidKasutajale.get(kasutajaID);
-                        if (kasutajaleSaadetudSõnumid == null) {
-                            out.writeInt(0);
-                            break;
-                        }
-
-                        int sõnumiteKogus = kasutajaleSaadetudSõnumid.size();
-                        out.writeInt(sõnumiteKogus);
-                        System.out.println("kliendile on saadetud " + sõnumiteKogus + " sõnum(it).");
-
-                        for (String sõnum : kasutajaleSaadetudSõnumid)
-                            out.writeUTF(sõnum);
-
-                        kasutajaleSaadetudSõnumid.clear(); // puhastab listi, kuna kõik sõnumid on loetud
+                        Server_Operations.getMessageBacklog(in, out, mitmesKlient, sõnumidKasutajale);
+                        jälgimiskes++;
                         break;
 
                     case SEND_MESSAGE_TO_BACKLOG:
-                        System.out.println(ResponseCodes.GET_MESSAGE_BACKLOG);
-                        out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // kõik korras
-
-                        String sihtKasutaja = in.readUTF(); jälgimiskes++; // Loeb sihtkasutaja nime
-                        System.out.println("Sihkasutaja: " + sihtKasutaja + ".");
-
-                        if (!sõnumidKasutajale.containsKey(sihtKasutaja)) { // !!! kas siin ei peaks mitte uut kasutajat looma ja talle jätma !!!
-                            /*out.writeInt(ResponseCodes.getValue(ResponseCodes.USER_NOT_FOUND)); // kasutajat ei leitud
-                            jälgimiskes++;
-                            break;
-
-                             */ // olukord kus võib olla mitte eksisteeriv kasutaja
-                            sõnumidKasutajale.put(sihtKasutaja, new ArrayList<>());
-                        }
-
-                        out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // kõik korras, kasutaja olemas
-                        String sõnum = in.readUTF(); jälgimiskes++;
-
-                        sõnumidKasutajale.get(sihtKasutaja).add(sõnum);
-                        System.out.println("Salvestasin tekstisisu.");
-                        System.out.println(sihtKasutaja + ", sõnum: \"" + sõnumidKasutajale.get(sihtKasutaja) + "\".");
+                        Server_Operations.sendMessageToBacklog(in, out, mitmesKlient, sõnumidKasutajale);
+                        jälgimiskes+=2;
                         break;
-                    case SEND_FILE_TO_SERVER:
-                        out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // kõik korras
-                        String sisenevaFailiNimi = in.readUTF(); jälgimiskes++;
-                        System.out.println("sain faili:"+sisenevaFailiNimi+" kirjutan kausta");
-                        // Find the last index of '/' or '\\'
-                        int lastIndex = sisenevaFailiNimi.lastIndexOf('/');
-                        if (lastIndex == -1) {
-                            lastIndex = sisenevaFailiNimi.lastIndexOf('\\');
-                        }
-                        // Extract the filename
-                        String filename = sisenevaFailiNimi.substring(lastIndex + 1);
 
-                        int failisuurus=in.readInt();
-                        try(FileOutputStream fos = new FileOutputStream("received/"+filename)){
-                            //System.out.println("failisuurus on:"+failisuurus);
-                            fos.write(in.readNBytes(failisuurus));
-                            out.writeInt(0);
-                        }catch (IOException e){
-                            System.out.println("ei kirjutanud edukalt");
-                            System.out.println(e.getMessage());
-                            out.writeInt(-5);
-                        }
+                    case SEND_FILE_TO_SERVER:
+                        Server_Operations.sendFileToServer(in, out, mitmesKlient);
+                        jälgimiskes++;
                         break;
 
                     default:
                         System.out.println(ResponseCodes.RESPONSE_CODE_NOT_FOUND);
                         System.out.println(mitmesKlient + 1 + ". kliendile saadetakse veateate, kuna request tüüp on vale: " + sõnumiTüüp + ".");
                         out.writeInt(ResponseCodes.getValue(ResponseCodes.RESPONSE_CODE_NOT_FOUND)); // antud tüüp oli vale
-                        in.readUTF(); jälgimiskes++;// paari välja puhastamiseks
+                        in.readUTF(); jälgimiskes++;// päringu komplekti välja puhastamiseks
                 }
             }
         } catch (IOException e) {
@@ -167,7 +95,7 @@ class ParalleelTöötlemiseks implements Runnable {
         } finally {
             System.out.println();
             System.out.println(mitmesKlient + 1 + ". klient lõpetab ühenduse.");
-            System.out.println("----------------");
+            System.out.println("-".repeat(50));
         }
     }
 }
