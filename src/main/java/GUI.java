@@ -169,15 +169,16 @@ public class GUI {
         }
 
     }
-
     private void updateTextSize() { // uus GUI teksti suurus
         Font currentFont = sõnumiKuva.getFont();
         float newSize = Math.max(sõnumiKuva.getWidth() / 80.0f, 12.0f);
         sõnumiKuva.setFont(currentFont.deriveFont(newSize));
+
     }
 
     private void updateAllTextSizes() { // proovisin teha dünaamiliselt muutuva teksti suuruse NB! see ei tööta TODO: Kui pole liiga keeruline võiks ära parandada
         float newSize = Math.max(frame.getWidth() / 80.0f, 12.0f);
+
         Font newFont = new Font(Font.SANS_SERIF, Font.PLAIN, Math.round(newSize));
 
         Component[] components = frame.getRootPane().getContentPane().getComponents();
