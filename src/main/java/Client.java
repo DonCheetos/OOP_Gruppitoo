@@ -62,96 +62,33 @@ public class Client {
                 System.out.println("Tagastuskood: OK.");
 
                 String sõnumiSisu = args[jälgimiseks++]; // sõnum või failinimi
-                ResponseCodes tagastusKood2;
                 switch (infoTüüp) {
                     case SEND_ECHO: // kasutaja saadab echo-sõnumi
-                        System.out.println(ResponseCodes.SEND_ECHO + ": \"" + sõnumiSisu + "\"");
-                        out.writeUTF(sõnumiSisu);
-                        System.out.println("Serverilt saadud echo-sõnum: \"" + in.readUTF() + "\".");
+                        ClientOperations.sendEcho(in,out,sõnumiSisu);
                         break;
 
                     case GET_MESSAGE_BACKLOG: // kasutaja küsib sõnumeid serverilt
                         System.out.println(ResponseCodes.GET_MESSAGE_BACKLOG);
                         String kasutajaID = sõnumiSisu; // loeb käasureal kasutajanime
-                        out.writeUTF(kasutajaID);
-                        int sõnumiteArv = in.readInt(); // sõnumite arv
-                        System.out.println("Saadud sõnumite arv: " + sõnumiteArv + ".");
-                        for (int i = 0; i < sõnumiteArv; i++) { // loeb kõik sõnumeid
-                            String sõnum = in.readUTF();
-                            System.out.println("Saadud sõnum: \"" + sõnum + "\".");
-                            try { // Kirjutab faili ka tulemusi mille nimeks saab "'kasutajaID'_msg.txt", praegu kasutatakse seda, et saaks lihtsamini kuvada sõnumeid GUI-s
-                                FileUtil.writeToFileSave(kasutajaID+"_msg.txt", sõnum);
-                                System.out.println("Sõnum on lisatud faili.");
-                            } catch (IOException e) {
-                                System.err.println("Faili kirjutamisel tekkis viga: " + e.getMessage());
-                            }
-                        }
+                        ClientOperations.getMessage(in,out,kasutajaID);
 
                         break;
 
                     case SEND_MESSAGE_TO_BACKLOG: // kirjutab mingi sõnumi kasutajale, käasureal järjekord 'requestTüüp kasutaja sõnum'
                         String saajaID = sõnumiSisu; // loeb käasureal kasutajanime
-                        System.out.println(ResponseCodes.SEND_MESSAGE_TO_BACKLOG + ": \n    Sõnumi saaja: \"" + saajaID + "\"");
-                        out.writeUTF(saajaID); // kasutaja määramine
-
-                        tagastusKood2 = ResponseCodes.getCode(in.readInt());
-                        if (tagastusKood2 == ResponseCodes.USER_NOT_FOUND) { // kui sellist kasutajat ei leitud
-                            System.out.println("Sellist kasutajat pole: " + saajaID + ".");
-                            jälgimiseks++;//kood viskas vea kui kasutajat ei leidnud
-                            break;
-                        }
-
                         sõnumiSisu = args[jälgimiseks++];
-                        System.out.println("    Sõnumi sisu: \"" + sõnumiSisu + "\"");
-                        out.writeUTF(sõnumiSisu); // kirjutab sõnumi välja
+                        ClientOperations.sendMessage(in,out,saajaID,sõnumiSisu);
+
                         break;
                     case SEND_FILE_TO_SERVER:
-                        out.writeUTF(sõnumiSisu);//failinimi
-                        try(FileInputStream fis = new FileInputStream(sõnumiSisu)){
-                            byte[] fail=fis.readAllBytes();
-                            out.writeInt(fail.length);//failisuurus
-                            System.out.println("Saatsin faili "+sõnumiSisu+" suurusega:"+fail.length);
-                            try{
-                                out.write(fail);
-
-                            }catch (SocketException e){
-                                System.out.println("kirjutamise viga, faili:"+sõnumiSisu+" ei õnnestunud kirjutada!");
-                                //throw e;
-                            }
-
-                        }
+                        ClientOperations.sendFile(in,out,sõnumiSisu);
 
                         break;
 
                     case GET_FILE: // küsib serverilt faili
-                        String failiNimi = sõnumiSisu;
-                        System.out.println(ResponseCodes.GET_FILE + ": \"" + failiNimi + "\"");
-                        out.writeUTF(failiNimi); // saadab faili nime
+                        ClientOperations.getFile(in,out,sõnumiSisu);
 
-                        tagastusKood2 = ResponseCodes.getCode(in.readInt());
-                        if (tagastusKood2 == ResponseCodes.FILE_NOT_FOUND) {
-                            System.out.println("Faili (\"" + failiNimi + "\") ei leitud.");
-                            break;
-                        }
-
-                        System.out.print("Fail leitud... ");
-                        int failiSuurus = in.readInt();
-
-                        // Find the last index of '/' or '\\'
-                        int lastIndex = sõnumiSisu.lastIndexOf('/');
-                        if (lastIndex == -1) {
-                            lastIndex = sõnumiSisu.lastIndexOf('\\');
-                        }
-
-                        // Extract the filename
-                        String filename = sõnumiSisu.substring(lastIndex + 1);
-
-                        try (OutputStream uusFail = new FileOutputStream("received/"+filename)) {
-                            byte[] sisu = new byte[failiSuurus];
-                            in.readFully(sisu);
-                            uusFail.write(sisu); // kirjuta võrgust saadud andmed oma arvutisse uude faili
-                            System.out.println("salvestatud.");
-                        }
+                        break;
                 }
             }
         } finally {

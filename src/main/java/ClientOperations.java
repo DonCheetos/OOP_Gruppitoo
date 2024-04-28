@@ -1,22 +1,48 @@
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
+import java.net.SocketException;
 
 public class ClientOperations {//kliendi tegemised oma klassi
     public static void sendEcho(DataInputStream in, DataOutputStream out,String sõnumiSisu) throws IOException {
-        out.writeInt(ResponseCodes.getValue(ResponseCodes.SEND_ECHO));
-        int tagastuskood=tagastuskoodiLugemine(in);//kontrolliks kas on korras
+        //out.writeInt(ResponseCodes.getValue(ResponseCodes.SEND_ECHO));
+        //int tagastuskood=tagastuskoodiLugemine(in);//kontrolliks kas on korras
         System.out.println(ResponseCodes.SEND_ECHO + ": \"" + sõnumiSisu + "\"");
         out.writeUTF(sõnumiSisu);
         System.out.println("Serverilt saadud echo-sõnum: \"" + in.readUTF() + "\".");
     }
-    public static void getFile(DataInputStream in, DataOutputStream out) throws IOException {
-        out.writeInt(ResponseCodes.getValue(ResponseCodes.GET_FILE));
-        int tagastuskood=tagastuskoodiLugemine(in);//kontrolliks kas on korras
+    public static void getFile(DataInputStream in, DataOutputStream out,String sõnumiSisu) throws IOException {
+        //out.writeInt(ResponseCodes.getValue(ResponseCodes.GET_FILE));
+        //int tagastuskood=tagastuskoodiLugemine(in);//kontrolliks kas on korras
+        System.out.println(ResponseCodes.GET_FILE + ": \"" + sõnumiSisu + "\"");
+        out.writeUTF(sõnumiSisu); // saadab faili nime
+
+        ResponseCodes tagastusKood2 = ResponseCodes.getCode(in.readInt());
+        if (tagastusKood2 == ResponseCodes.FILE_NOT_FOUND) {
+            System.out.println("Faili (\"" + sõnumiSisu + "\") ei leitud.");
+            return;
+        }
+
+        System.out.print("Fail leitud... ");
+        int failiSuurus = in.readInt();
+
+        // Find the last index of '/' or '\\'
+        int lastIndex = sõnumiSisu.lastIndexOf('/');
+        if (lastIndex == -1) {
+            lastIndex = sõnumiSisu.lastIndexOf('\\');
+        }
+
+        // Extract the filename
+        String filename = sõnumiSisu.substring(lastIndex + 1);
+
+        try (OutputStream uusFail = new FileOutputStream("received/"+filename)) {
+            byte[] sisu = new byte[failiSuurus];
+            in.readFully(sisu);
+            uusFail.write(sisu); // kirjuta võrgust saadud andmed oma arvutisse uude faili
+            System.out.println("salvestatud.");
+        }
     }
     public static void getMessage(DataInputStream in, DataOutputStream out,String kasutajaID) throws IOException {
-        out.writeInt(ResponseCodes.getValue(ResponseCodes.GET_MESSAGE_BACKLOG));
-        int tagastuskood=tagastuskoodiLugemine(in);//kontrolliks kas on korras
+        //out.writeInt(ResponseCodes.getValue(ResponseCodes.GET_MESSAGE_BACKLOG));
+        //int tagastuskood=tagastuskoodiLugemine(in);//kontrolliks kas on korras
         out.writeUTF(kasutajaID);
         int sõnumiteArv = in.readInt(); // sõnumite arv
         System.out.println("Saadud sõnumite arv: " + sõnumiteArv + ".");
@@ -31,16 +57,32 @@ public class ClientOperations {//kliendi tegemised oma klassi
             }
         }
     }
-    public static int sendMessage(DataInputStream in, DataOutputStream out,String saajaID) throws IOException {
-        out.writeInt(ResponseCodes.getValue(ResponseCodes.SEND_MESSAGE_TO_BACKLOG));
-        int tagastuskood=tagastuskoodiLugemine(in);//kontrolliks kas on korras
+    public static void sendMessage(DataInputStream in, DataOutputStream out,String saajaID,String sõnumiSisu) throws IOException {
+        //out.writeInt(ResponseCodes.getValue(ResponseCodes.SEND_MESSAGE_TO_BACKLOG));
+        //int tagastuskood=tagastuskoodiLugemine(in);//kontrolliks kas on korras//todo ülemised kaks rida kasutada valimise asemel read 57 ja 48 sama asi ka teistega
         System.out.println(ResponseCodes.SEND_MESSAGE_TO_BACKLOG + ": \n    Sõnumi saaja: \"" + saajaID + "\"");
         out.writeUTF(saajaID); // kasutaja määramine
-        return in.readInt();
+        in.readInt();
+        System.out.println("    Sõnumi sisu: \"" + sõnumiSisu + "\"");
+        out.writeUTF(sõnumiSisu); // kirjutab sõnumi välja
     }
-    public static void sendFile(DataInputStream in, DataOutputStream out) throws IOException {
-        out.writeInt(ResponseCodes.getValue(ResponseCodes.SEND_FILE_TO_SERVER));
-        int tagastuskood=tagastuskoodiLugemine(in);//kontrolliks kas on korras
+    public static void sendFile(DataInputStream in, DataOutputStream out,String failinimi) throws IOException {
+        //out.writeInt(ResponseCodes.getValue(ResponseCodes.SEND_FILE_TO_SERVER));
+        //int tagastuskood=tagastuskoodiLugemine(in);//kontrolliks kas on korras
+        out.writeUTF(failinimi);//failinimi
+        try(FileInputStream fis = new FileInputStream(failinimi)){
+            byte[] fail=fis.readAllBytes();
+            out.writeInt(fail.length);//failisuurus
+            System.out.println("Saatsin faili "+failinimi+" suurusega:"+fail.length);
+            try{
+                out.write(fail);
+
+            }catch (SocketException e){
+                System.out.println("kirjutamise viga, faili:"+failinimi+" ei õnnestunud kirjutada!");
+                //throw e;
+            }
+
+        }
     }
     public static int tagastuskoodiLugemine(DataInputStream in) throws IOException {
         int tagastusKood = in.readInt(); // oleku kontrolliks
