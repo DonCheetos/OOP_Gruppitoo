@@ -1,7 +1,8 @@
+import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -9,112 +10,124 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class GUI {
+    // Deklareerime GUI komponendid
     private JFrame frame;
-    private JTextField kasutaja;
-    private JTextField sonumivali;
-    private JTextField saajavali;
-    private JButton saadanupp;
-    private JButton loesõnumeid;
-    private JButton failinupp;
-    private JTextArea sõnumiKuva; // tegevuse kuvamiseks
+    private JTextField kasutaja; // Tekstiväli kasutaja nime jaoks
+    private JTextField sonumivali; // Tekstiväli sõnumi sisestamiseks
+    private JTextField saajavali; // Tekstiväli sõnumi saaja nime jaoks
+    private JButton saadanupp; // Nupp sõnumi saatmiseks
+    private JButton loesõnumeid; // Nupp saadud sõnumite lugemiseks
+    private JButton failinupp; // Nupp faili valimiseks
+    private JTextArea sõnumiKuva; // Tekstiala sõnumite kuvamiseks
 
-    private File valitudfail; // fail mida hakata saatma
+    private File valitudfail; // Valitud faili salvestamiseks
 
-    public GUI() { // TODO: GUI stiili võiks ilusamaks teha(Optional). GUI võiks tuleviku mõttes kasutda ka otse direct/group chat jaoks
+    // GUI konstruktor
+    public GUI() {
         frame = new JFrame("Sõnumi rakendus");
-        frame.setSize(800, 600); // Suurendatud raami suurus
-        frame.setMinimumSize(new Dimension(400, 300)); // Minimaalne akna suurus
+        frame.setSize(800, 600);
+        frame.setMinimumSize(new Dimension(600, 300)); // Minimaalne suurus vastavalt nuppudele ja "Sõnum:" lahter
 
-        // Paneeli stiili muutmine
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
-            e.printStackTrace();
-        }
+        // Peapaneel
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        panel.setBackground(new Color(240, 240, 240));
 
+        // Ülemine paneel
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        topPanel.setBackground(new Color(230, 230, 230));
+        topPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.gray));
 
-        JPanel panel = new JPanel();
-        panel.setLayout(new GridLayout(5, 2));
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // Lisatud tühjad piirid
-        panel.setBackground(Color.lightGray);
-
+        // Silt "Kasutaja:" ja tekstiväli kasutaja nime jaoks
         JLabel nameLabel = new JLabel("Kasutaja:");
-        Font labelFont = nameLabel.getFont(); // Hangi praegune font. NB! taaskasutan seda teiste fontide muutmise jaoks ka
-        nameLabel.setForeground(Color.BLUE);
-        int newSize = 16; // Uue suuruse määramine
-        nameLabel.setFont(labelFont.deriveFont((float)newSize)); // uus font
-        kasutaja = new JTextField();
-        panel.add(nameLabel);
-        panel.add(kasutaja);
+        kasutaja = new JTextField(12); // Piirame kasutaja nime lahtri suurust 12 tähemärgini
+        topPanel.add(nameLabel);
+        topPanel.add(kasutaja);
 
-        JLabel sonumLabel = new JLabel("Sõnum:");
-        sonumLabel.setForeground(Color.BLUE);
-        sonumLabel.setFont(labelFont.deriveFont((float)newSize)); // uus font
-        sonumivali = new JTextField();
-        panel.add(sonumLabel);
-        panel.add(sonumivali);
-
+        // Silt "Saaja:" ja tekstiväli saaja nime jaoks
         JLabel saajaLabel = new JLabel("Saaja:");
-        saajaLabel.setForeground(Color.BLUE);
-        saajaLabel.setFont(labelFont.deriveFont((float)newSize)); // uus font
-        saajavali = new JTextField();
-        panel.add(saajaLabel);
-        panel.add(saajavali);
+        saajavali = new JTextField(12); // Piirame saaja nime lahtri suurust 12 tähemärgini
+        topPanel.add(saajaLabel);
+        topPanel.add(saajavali);
 
-        saadanupp = new JButton("Saada");
-        saadanupp.setForeground(Color.BLACK); // Muudame nupu teksti värvi mustaks
-        saadanupp.setBackground(Color.GREEN.darker());
-        saadanupp.setFont(labelFont.deriveFont((float)newSize)); // uus font
-        saadanupp.addActionListener(e -> sendMessage());
-        panel.add(saadanupp);
+        panel.add(topPanel, BorderLayout.NORTH);
 
-        loesõnumeid = new JButton("Loe sõnumeid");
-        loesõnumeid.setForeground(Color.BLACK); // Muudame nupu teksti värvi mustaks
-        loesõnumeid.setBackground(Color.ORANGE.darker());
-        loesõnumeid.setFont(labelFont.deriveFont((float)newSize)); // uus font
-        loesõnumeid.addActionListener(e -> getMessage());
-        panel.add(loesõnumeid);
-
+        // Keskpärane paneel sõnumite kuvamiseks
+        JPanel centerPanel = new JPanel(new BorderLayout());
         sõnumiKuva = new JTextArea();
         sõnumiKuva.setEditable(false);
         JScrollPane scrollPane = new JScrollPane(sõnumiKuva);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        panel.add(scrollPane);
+        centerPanel.add(scrollPane, BorderLayout.CENTER);
+        panel.add(centerPanel, BorderLayout.CENTER);
 
-        failinupp = new JButton("Saa fail");
-        failinupp.setForeground(Color.BLACK); // Muudame nupu teksti värvi mustaks
-        failinupp.setBackground(Color.RED.darker());
-        failinupp.setFont(labelFont.deriveFont((float)newSize)); // uus font
-        failinupp.addActionListener(e -> {
-            JFileChooser fileChooser = new JFileChooser();
-            int result = fileChooser.showOpenDialog(frame);
-            if (result == JFileChooser.APPROVE_OPTION) {
-                valitudfail = fileChooser.getSelectedFile();
-            }
-        });
-        panel.add(failinupp);
+        // Alumine paneel nuppude ja tekstiväljaga
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+        bottomPanel.setBackground(new Color(230, 230, 230));
+
+        // Nuppude paneel vasakul
+        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        buttonsPanel.setBackground(new Color(230, 230, 230));
+
+        // Nupp sõnumi saatmiseks
+        try {
+            Image sendIcon = ImageIO.read(new File("icons","send-button.png")).getScaledInstance(30, 30, Image.SCALE_SMOOTH);
+            saadanupp = new JButton(new ImageIcon(sendIcon));
+        } catch (IOException e) {
+            saadanupp = new JButton("Saada");
+        }
+        saadanupp.addActionListener(e -> sendMessage());
+        buttonsPanel.add(saadanupp);
+
+        // Nupp saadud sõnumite lugemiseks
+        try {
+            Image readIcon = ImageIO.read(new File("icons","read-message-icon.png")).getScaledInstance(30, 30, Image.SCALE_SMOOTH);
+            loesõnumeid = new JButton(new ImageIcon(readIcon));
+        } catch (IOException e) {
+            loesõnumeid = new JButton("Loe sõnumeid");
+        }
+        loesõnumeid.addActionListener(e -> getMessage());
+        buttonsPanel.add(loesõnumeid);
+
+        // Nupp faili valimiseks
+        try {
+            Image fileIcon = ImageIO.read(new File("icons","folder-icon.png")).getScaledInstance(30, 30, Image.SCALE_SMOOTH);
+            failinupp = new JButton(new ImageIcon(fileIcon));
+        } catch (IOException e) {
+            failinupp = new JButton("Vali fail");
+        }
+        failinupp.addActionListener(e -> selectFile());
+        buttonsPanel.add(failinupp);
+
+        bottomPanel.add(buttonsPanel, BorderLayout.WEST);
+
+        // Tekstiväli sõnumi sisestamiseks
+        sonumivali = new JTextField(20);
+        bottomPanel.add(sonumivali, BorderLayout.CENTER);
+
+        panel.add(bottomPanel, BorderLayout.SOUTH);
 
         frame.add(panel);
         frame.setVisible(true);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Sulgemisel lõpetab programmi töö
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        // Sündmusekuulaja JTextArea suuruse muutmiseks
-        sõnumiKuva.addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-                updateTextSize();
+        // Piirame kasutaja ja saaja väljade pikkust
+        kasutaja.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                if (kasutaja.getText().length() >= 12)
+                    evt.consume();
             }
         });
 
-        // Sündmusekuulaja akna suuruse muutmiseks
-        frame.addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-                updateAllTextSizes();
+        saajavali.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                if (saajavali.getText().length() >= 12)
+                    evt.consume();
             }
         });
     }
 
+    // Sõnumi saatmise meetod
     private void sendMessage() {
         String name = kasutaja.getText();
         if (name.isEmpty()) { // kui kasutajate ei sisestatud
@@ -125,8 +138,8 @@ public class GUI {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy");
         String formattedDateTime = now.format(formatter);
 
-        String message = sonumivali.getText();
-        String receiver = saajavali.getText();
+        String message = sonumivali.getText().strip();
+        String receiver = saajavali.getText().strip();
         String fullSõnum = '(' + formattedDateTime + ") " + name + " : " + message;
 
         if (!receiver.isEmpty() && !message.isEmpty()) { // receiver ja sõnum peab olema täidetud
@@ -144,57 +157,48 @@ public class GUI {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        }else System.err.println("Kasutaja ja sõnumi lahter peab olema täidetud!"); // teade
+        } else {
+            System.err.println("Saaja ja sõnumi lahter peab olema täidetud!"); // teade
+        }
     }
 
-    private void getMessage() { // sõnumite sisse lugemiseks serverilt
+    // Saadud sõnumite lugemise meetod
+    private void getMessage() {
         String receiver = kasutaja.getText();
 
-        try {
-            String[] command;
-            command = new String[]{"getsonum", receiver};
-
-            Client.main(command); // päringu tegemine
-
+        if (receiver.isEmpty()) System.err.println("Kasutaja lahter ei tohi olla tühi");
+        else {
             try {
-                List<String> messages = FileUtil.readFromFile(receiver + "_msg.txt"); // salvestab listi kõik saadud sõnumid
-                for (String message : messages) {
-                    sõnumiKuva.append(message + "\n");
+                String[] command;
+                command = new String[]{"getsonum", receiver};
+
+                Client.main(command); // päringu tegemine
+
+                try {
+                    List<String> messages = FileUtil.readFromFile(receiver + "_msg.txt"); // salvestab listi kõik saadud sõnumid
+                    for (String message : messages) {
+                        sõnumiKuva.append(message + "\n");
+                    }
+                } catch (IOException e) {
+                    System.err.println("Sõnumeid polnud");
                 }
             } catch (IOException e) {
-                System.err.println("Sõnumeid polnud");
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-    }
-    private void updateTextSize() { // uus GUI teksti suurus
-        Font currentFont = sõnumiKuva.getFont();
-        float newSize = Math.max(sõnumiKuva.getWidth() / 80.0f, 12.0f);
-        sõnumiKuva.setFont(currentFont.deriveFont(newSize));
-
-    }
-
-    private void updateAllTextSizes() { // proovisin teha dünaamiliselt muutuva teksti suuruse NB! see ei tööta TODO: Kui pole liiga keeruline võiks ära parandada
-        float newSize = Math.max(frame.getWidth() / 80.0f, 12.0f);
-
-        Font newFont = new Font(Font.SANS_SERIF, Font.PLAIN, Math.round(newSize));
-
-        Component[] components = frame.getRootPane().getContentPane().getComponents();
-        for (Component component : components) {
-            if (component instanceof JLabel) {
-                ((JLabel) component).setFont(newFont);
-            } else if (component instanceof JTextField) {
-                ((JTextField) component).setFont(newFont);
-            } else if (component instanceof JTextArea) {
-                ((JTextArea) component).setFont(newFont);
-            } else if (component instanceof JButton) {
-                ((JButton) component).setFont(newFont);
+                throw new RuntimeException(e);
             }
         }
     }
 
+    // Faili valimise meetod
+    private void selectFile() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Text Files", "txt"));
+        int result = fileChooser.showOpenDialog(frame);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            valitudfail = fileChooser.getSelectedFile();
+        }
+    }
+
+    // Main meetod
     public static void main(String[] args) {
         SwingUtilities.invokeLater(GUI::new);
     }
