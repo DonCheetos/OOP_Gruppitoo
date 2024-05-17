@@ -16,6 +16,13 @@ public class LoginAken extends JDialog {
         parooliVali = new JPasswordField(20);
         panel.add(parooliVali);
 
+        kasutajaVali.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                if (kasutajaVali.getText().length() >= 12)
+                    evt.consume();
+            }
+        });
+
         JButton loginNupp = new JButton("Logi sisse");
         loginNupp.addActionListener(e -> {
             if (kasutajaVali.getText().isEmpty() || new String(parooliVali.getPassword()).isEmpty()) {
