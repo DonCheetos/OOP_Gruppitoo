@@ -11,10 +11,8 @@ import java.util.concurrent.Executors;
 public class Server {
     public static void main(String[] args) throws IOException {
         int pordiNumber = 1337;
+        Map<String, String> kasutajaInfo = new HashMap<>(); // sisaldab kasutajanime ja parooli räsi
         Map<String, ArrayList<String>> sõnumidKasutajale = new HashMap<>(); // salvestada sõnumeid vastavale kasutajale
-        sõnumidKasutajale.put("Kasutaja1", new ArrayList<>());
-        sõnumidKasutajale.put("Kasutaja2", new ArrayList<>());
-
 
         ExecutorService threads = Executors.newCachedThreadPool();
         int kliendiID = 0; // mingi ID viis kuidas aru saada, kellega tegemist
@@ -26,7 +24,7 @@ public class Server {
                 Socket socket = ss.accept();
                 System.out.println(kliendiID + 1 + ". klient on serveriga ühendatud.");
 
-                threads.execute(new ParalleelTöötlemiseks(socket, kliendiID++, sõnumidKasutajale));
+                threads.execute(new ParalleelTöötlemiseks(socket, kliendiID++, sõnumidKasutajale,kasutajaInfo));
             }
         }
     }
@@ -36,11 +34,13 @@ class ParalleelTöötlemiseks implements Runnable {
     private final Socket socket;
     public Map<String, ArrayList<String>> sõnumidKasutajale;
     private int mitmesKlient;
+    Map<String, String> kasutajaInfo;
 
-    public ParalleelTöötlemiseks(Socket socket, int mitmesKlient, Map<String, ArrayList<String>> sõnumidKasutajale) {
+    public ParalleelTöötlemiseks(Socket socket, int mitmesKlient, Map<String, ArrayList<String>> sõnumidKasutajale, Map<String, String> kasutajaInfo) {
         this.socket = socket;
         this.mitmesKlient = mitmesKlient;
         this.sõnumidKasutajale = sõnumidKasutajale;
+        this.kasutajaInfo = kasutajaInfo;
     }
 
     @Override
@@ -52,7 +52,6 @@ class ParalleelTöötlemiseks implements Runnable {
             int sõnumiteArv = in.readInt();
             System.out.println(mitmesKlient + 1 + ". kliendilt oodatud sõnumite arv: " + sõnumiteArv + ".");
             int jälgimiskes = 0;
-            //for (int i = 0; i < sõnumiteArv / 2; i++) {
             while(sõnumiteArv != jälgimiskes){
                 System.out.println();
                 ResponseCodes sõnumiTüüp = ResponseCodes.getCode(in.readInt()); jälgimiskes++;
@@ -81,6 +80,12 @@ class ParalleelTöötlemiseks implements Runnable {
                     case SEND_FILE_TO_SERVER:
                         Server_Operations.sendFileToServer(in, out, mitmesKlient);
                         jälgimiskes++;
+                        break;
+                    case CREATE_USER:
+                        Server_Operations.createUser(in,out,mitmesKlient,kasutajaInfo);
+                        break;
+                    case CHECK_USER:
+                        Server_Operations.checkUser(in,out,mitmesKlient,kasutajaInfo);
                         break;
 
                     default:

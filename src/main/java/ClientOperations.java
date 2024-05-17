@@ -1,7 +1,9 @@
 import java.io.*;
+import java.net.Socket;
 import java.net.SocketException;
 
 public class ClientOperations {//kliendi tegemised oma klassi
+
     public static void sendEcho(DataInputStream in, DataOutputStream out,String sõnumiSisu) throws IOException {
         //out.writeInt(ResponseCodes.getValue(ResponseCodes.SEND_ECHO));
         //int tagastuskood=tagastuskoodiLugemine(in);//kontrolliks kas on korras
@@ -92,5 +94,42 @@ public class ClientOperations {//kliendi tegemised oma klassi
         }
         System.out.println("Tagastuskood: OK.");
         return tagastusKood;
+    }
+
+    // TODO: Lahendused peab parandama, kuna sisendi tagaside(vale parool, kasutaja võetud jne) saamiseks ei saa päringut teha läbi client.java
+    public static int createUser(String kasutajanimi, String parool) throws IOException {
+        try (Socket socket = new Socket("localhost", 1337);
+             DataInputStream in = new DataInputStream(socket.getInputStream());
+             DataOutputStream out = new DataOutputStream(socket.getOutputStream())) {
+
+            out.writeInt(1);
+            out.writeInt(ResponseCodes.getValue(ResponseCodes.CREATE_USER));
+
+            out.writeUTF(kasutajanimi);
+            int tagastusKood =  in.readInt();
+            if (tagastusKood == ResponseCodes.getValue(ResponseCodes.USER_TAKEN)) return ResponseCodes.getValue(ResponseCodes.USER_TAKEN);
+            out.writeUTF(parool);
+
+            tagastusKood = in.readInt();
+            return tagastusKood;
+        }
+    }
+
+    public static int checkUser(String kasutajanimi, String parool) throws IOException {
+        try (Socket socket = new Socket("localhost", 1337);
+             DataInputStream in = new DataInputStream(socket.getInputStream());
+             DataOutputStream out = new DataOutputStream(socket.getOutputStream())) {
+
+            out.writeInt(1);
+            out.writeInt(ResponseCodes.getValue(ResponseCodes.CHECK_USER));
+
+            out.writeUTF(kasutajanimi);
+            int tagastusKood =  in.readInt();
+            if (tagastusKood == ResponseCodes.getValue(ResponseCodes.USER_NOT_FOUND)) return ResponseCodes.getValue(ResponseCodes.USER_NOT_FOUND);
+            out.writeUTF(parool);
+
+            tagastusKood = in.readInt();
+            return tagastusKood;
+        }
     }
 }

@@ -7,52 +7,52 @@ import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class GUI {
-    // Deklareerime GUI komponendid
     private JFrame frame;
-    private JTextField kasutaja; // Tekstiväli kasutaja nime jaoks
-    private JTextField sonumivali; // Tekstiväli sõnumi sisestamiseks
-    private JTextField saajavali; // Tekstiväli sõnumi saaja nime jaoks
-    private JButton saadanupp; // Nupp sõnumi saatmiseks
-    private JButton loesõnumeid; // Nupp saadud sõnumite lugemiseks
-    private JButton failinupp; // Nupp faili valimiseks
-    private JTextArea sõnumiKuva; // Tekstiala sõnumite kuvamiseks
+    private JTextField kasutaja;
+    private JTextField sonumivali;
+    private JTextField saajavali;
+    private JButton saadanupp;
+    private JButton failinupp;
+    private JTextArea sõnumiKuva;
 
-    private File valitudfail; // Valitud faili salvestamiseks
+    private File valitudfail;
+    private Set<String> loetudSonumid = new HashSet<>(); // hoidla loetud sõnumite ID-de jaoks
 
-    // GUI konstruktor
-    public GUI() {
+    public GUI(String kasutajanimi) {
         frame = new JFrame("Sõnumi rakendus");
         frame.setSize(800, 600);
-        frame.setMinimumSize(new Dimension(600, 300)); // Minimaalne suurus vastavalt nuppudele ja "Sõnum:" lahter
+        frame.setMinimumSize(new Dimension(600, 300));
 
-        // Peapaneel
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(new EmptyBorder(10, 10, 10, 10));
         panel.setBackground(new Color(240, 240, 240));
 
-        // Ülemine paneel
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         topPanel.setBackground(new Color(230, 230, 230));
         topPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.gray));
 
-        // Silt "Kasutaja:" ja tekstiväli kasutaja nime jaoks
         JLabel nameLabel = new JLabel("Kasutaja:");
-        kasutaja = new JTextField(12); // Piirame kasutaja nime lahtri suurust 12 tähemärgini
+        kasutaja = new JTextField(12);
+        kasutaja.setText(kasutajanimi);
+        kasutaja.setEditable(false);
         topPanel.add(nameLabel);
         topPanel.add(kasutaja);
 
-        // Silt "Saaja:" ja tekstiväli saaja nime jaoks
         JLabel saajaLabel = new JLabel("Saaja:");
-        saajavali = new JTextField(12); // Piirame saaja nime lahtri suurust 12 tähemärgini
+        saajavali = new JTextField(12);
         topPanel.add(saajaLabel);
         topPanel.add(saajavali);
 
         panel.add(topPanel, BorderLayout.NORTH);
 
-        // Keskpärane paneel sõnumite kuvamiseks
         JPanel centerPanel = new JPanel(new BorderLayout());
         sõnumiKuva = new JTextArea();
         sõnumiKuva.setEditable(false);
@@ -61,17 +61,14 @@ public class GUI {
         centerPanel.add(scrollPane, BorderLayout.CENTER);
         panel.add(centerPanel, BorderLayout.CENTER);
 
-        // Alumine paneel nuppude ja tekstiväljaga
         JPanel bottomPanel = new JPanel(new BorderLayout());
         bottomPanel.setBackground(new Color(230, 230, 230));
 
-        // Nuppude paneel vasakul
         JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         buttonsPanel.setBackground(new Color(230, 230, 230));
 
-        // Nupp sõnumi saatmiseks
         try {
-            Image sendIcon = ImageIO.read(new File("icons","send-button.png")).getScaledInstance(30, 30, Image.SCALE_SMOOTH);
+            Image sendIcon = ImageIO.read(new File("icons", "send-button.png")).getScaledInstance(30, 30, Image.SCALE_SMOOTH);
             saadanupp = new JButton(new ImageIcon(sendIcon));
         } catch (IOException e) {
             saadanupp = new JButton("Saada");
@@ -79,19 +76,8 @@ public class GUI {
         saadanupp.addActionListener(e -> sendMessage());
         buttonsPanel.add(saadanupp);
 
-        // Nupp saadud sõnumite lugemiseks
         try {
-            Image readIcon = ImageIO.read(new File("icons","read-message-icon.png")).getScaledInstance(30, 30, Image.SCALE_SMOOTH);
-            loesõnumeid = new JButton(new ImageIcon(readIcon));
-        } catch (IOException e) {
-            loesõnumeid = new JButton("Loe sõnumeid");
-        }
-        loesõnumeid.addActionListener(e -> getMessage());
-        buttonsPanel.add(loesõnumeid);
-
-        // Nupp faili valimiseks
-        try {
-            Image fileIcon = ImageIO.read(new File("icons","folder-icon.png")).getScaledInstance(30, 30, Image.SCALE_SMOOTH);
+            Image fileIcon = ImageIO.read(new File("icons", "folder-icon.png")).getScaledInstance(30, 30, Image.SCALE_SMOOTH);
             failinupp = new JButton(new ImageIcon(fileIcon));
         } catch (IOException e) {
             failinupp = new JButton("Vali fail");
@@ -101,7 +87,6 @@ public class GUI {
 
         bottomPanel.add(buttonsPanel, BorderLayout.WEST);
 
-        // Tekstiväli sõnumi sisestamiseks
         sonumivali = new JTextField(20);
         bottomPanel.add(sonumivali, BorderLayout.CENTER);
 
@@ -111,7 +96,6 @@ public class GUI {
         frame.setVisible(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        // Piirame kasutaja ja saaja väljade pikkust
         kasutaja.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyTyped(java.awt.event.KeyEvent evt) {
                 if (kasutaja.getText().length() >= 12)
@@ -125,12 +109,19 @@ public class GUI {
                     evt.consume();
             }
         });
+
+        // Laadi eelnevad sõnumid
+        laadieelsedSonumid();
+
+        // automaatne pollimise süsteem, täidab ülesannet iga 1 sekundi tagant
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+        Runnable task = this::getMessage;
+        scheduler.scheduleAtFixedRate(task, 0, 1, TimeUnit.SECONDS);
     }
 
-    // Sõnumi saatmise meetod
     private void sendMessage() {
         String name = kasutaja.getText();
-        if (name.isEmpty()) { // kui kasutajate ei sisestatud
+        if (name.isEmpty()) {
             name = "Unknown";
         }
 
@@ -142,7 +133,7 @@ public class GUI {
         String receiver = saajavali.getText().strip();
         String fullSõnum = '(' + formattedDateTime + ") " + name + " : " + message;
 
-        if (!receiver.isEmpty() && !message.isEmpty()) { // receiver ja sõnum peab olema täidetud
+        if (!receiver.isEmpty() && !message.isEmpty()) {
             try {
                 String[] command;
                 if (valitudfail != null) {
@@ -152,33 +143,37 @@ public class GUI {
                 }
                 Client.main(command);
 
-                sõnumiKuva.append("Saadetud sõnum: " + '"' + message + '"' + ", saajale: " + "'" + receiver + "'" + "\n");
+                sõnumiKuva.append(fullSõnum);
                 sõnumiKuva.setCaretPosition(sõnumiKuva.getDocument().getLength());
+                sonumivali.setText("");
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         } else {
-            System.err.println("Saaja ja sõnumi lahter peab olema täidetud!"); // teade
+            System.err.println("Saaja ja sõnumi lahter peab olema täidetud!");
         }
     }
 
-    // Saadud sõnumite lugemise meetod
     private void getMessage() {
         String receiver = kasutaja.getText();
 
-        if (receiver.isEmpty()) System.err.println("Kasutaja lahter ei tohi olla tühi");
-        else {
+        if (receiver.isEmpty()) {
+            System.err.println("Kasutaja lahter ei tohi olla tühi");
+        } else if (receiver.equals("Unknown")) {
+            System.err.println("Külialisena sõnumeid ei saa lugeda, ainult saata");
+        } else {
             try {
-                String[] command;
-                command = new String[]{"getsonum", receiver};
-
-                Client.main(command); // päringu tegemine
+                String[] command = {"getsonum", receiver};
+                Client.main(command);
 
                 try {
-                    List<String> messages = FileUtil.readFromFile(receiver + "_msg.txt"); // salvestab listi kõik saadud sõnumid
+                    List<String> messages = FileUtil.readFromFile(receiver + "_msg.txt");
                     for (String message : messages) {
-                        sõnumiKuva.append(message + "\n");
+                        if (loetudSonumid.add(message)) { // lisa ja kontrolli kas uus sõnum
+                            sõnumiKuva.append(message + "\n");
+                        }
                     }
+                    sõnumiKuva.setCaretPosition(sõnumiKuva.getDocument().getLength());
                 } catch (IOException e) {
                     System.err.println("Sõnumeid polnud");
                 }
@@ -188,7 +183,23 @@ public class GUI {
         }
     }
 
-    // Faili valimise meetod
+    private void laadieelsedSonumid() {
+        String receiver = kasutaja.getText();
+        if (!receiver.isEmpty()) {
+            try {
+                List<String> messages = FileUtil.readFromFile(receiver + "_msg.txt");
+                for (String message : messages) {
+                    if (loetudSonumid.add(message)) { // laadi eelnevad sõnumid ja lisa need loetud sõnumite hulka
+                        sõnumiKuva.append(message + "\n");
+                    }
+                }
+                sõnumiKuva.setCaretPosition(sõnumiKuva.getDocument().getLength());
+            } catch (IOException e) {
+                System.err.println("Eelnevaid sõnumeid ei õnnestunud laadida");
+            }
+        }
+    }
+
     private void selectFile() {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setFileFilter(new FileNameExtensionFilter("Text Files", "txt"));
@@ -198,8 +209,18 @@ public class GUI {
         }
     }
 
-    // Main meetod
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(GUI::new);
+        SwingUtilities.invokeLater(() -> {
+            JFrame parentFrame = new JFrame();
+            LoginAken loginDialog = new LoginAken(parentFrame);
+            loginDialog.setVisible(true);
+
+            if (loginDialog.isLoginOk()) { // login korras jätkab
+                new GUI(loginDialog.getKasutajanimi());
+            } else {
+                System.err.println("Kasutaja ei eksisteeri või parool oli vale");
+                System.exit(0);
+            }
+        });
     }
 }

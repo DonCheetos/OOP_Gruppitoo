@@ -2,6 +2,9 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
 
 public class Server_Operations { // serveri operatsioonide jaoks class
 
@@ -82,21 +85,67 @@ public class Server_Operations { // serveri operatsioonide jaoks class
     public static void sendFileToServer(DataInputStream in, DataOutputStream out, int mitmesKlient) throws IOException {
         out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // kõik korras
         String sisenevaFailiNimi = in.readUTF();
-        System.out.println("sain kasutaja (" + mitmesKlient + ") faili: '"+sisenevaFailiNimi+"' kirjutan kausta");
+        System.out.println("sain kasutaja (" + mitmesKlient + ") faili: '" + sisenevaFailiNimi + "' kirjutan kausta");
         int lastIndex = sisenevaFailiNimi.lastIndexOf('/');
         if (lastIndex == -1) {
             lastIndex = sisenevaFailiNimi.lastIndexOf('\\');
         }
         String filename = sisenevaFailiNimi.substring(lastIndex + 1);
 
-        int failisuurus=in.readInt();
-        try(FileOutputStream fos = new FileOutputStream("received/"+filename)){
+        int failisuurus = in.readInt();
+        try (FileOutputStream fos = new FileOutputStream("received/" + filename)) {
             fos.write(in.readNBytes(failisuurus));
             out.writeInt(0);
-        }catch (IOException e){
+        } catch (IOException e) {
             System.out.println("ei kirjutanud edukalt");
             System.out.println(e.getMessage());
             out.writeInt(-5);
         }
     }
+
+    public static void createUser(DataInputStream in, DataOutputStream out, int mitmesKlient,  Map<String, String> kasutajaInfo) throws IOException {
+        String kasutaja = in.readUTF();
+        if (kasutajaInfo.containsKey(kasutaja)){
+            out.writeInt(ResponseCodes.getValue(ResponseCodes.USER_TAKEN));
+            System.out.println(mitmesKlient+". kasutajanimi oli võetud ei registeeritud");
+            return;
+        }
+        out.writeInt(ResponseCodes.getValue(ResponseCodes.OK));
+        String parool = in.readUTF();
+        String paroolRäsi = hashPassword(parool);
+        kasutajaInfo.put(kasutaja,paroolRäsi); // kasutaja salvestamine
+        out.writeInt(ResponseCodes.getValue(ResponseCodes.OK));
+        System.out.println(mitmesKlient+". registeeriti kasutaja nimega: \"" + kasutaja + "\"");
+    }
+
+    public static void checkUser(DataInputStream in, DataOutputStream out, int mitmesKlient, Map<String, String> kasutajaInfo) throws IOException {
+        String kasutaja = in.readUTF();
+        if (!kasutajaInfo.containsKey(kasutaja)){
+            out.writeInt(ResponseCodes.getValue(ResponseCodes.USER_NOT_FOUND));
+            System.out.println(mitmesKlient+". kasutaja \"" + kasutaja + "\" ei eksisteeri annb veateate");
+            return;
+        }
+        out.writeInt(ResponseCodes.getValue(ResponseCodes.OK));
+        String parool = in.readUTF();
+        String paroolRäsi = hashPassword(parool);
+        if (kasutajaInfo.get(kasutaja).equals(paroolRäsi)) {
+            out.writeInt(ResponseCodes.getValue(ResponseCodes.OK));
+        } else {
+            out.writeInt(ResponseCodes.getValue(ResponseCodes.FALSE_PASSWORD)); // vale parool
+        }
+    }
+    public static String hashPassword(String password) { // parooli räsimine
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] hashedPassword = md.digest(password.getBytes());
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hashedPassword) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }
