@@ -52,7 +52,7 @@ public enum ResponseCodes {
         };
     }
     public static void koodid(){
-        String[] koodid={"echo $sõnum","file $path","sendfile $path","getsonum $saaja","writesonum $saaja $sõnum"};
+        String[] koodid={"echo $sõnum","file $path","sendfile $path","getsonum $saaja","writesonum $saatja $saaja $sõnum"};
         for(String kood:koodid) System.out.println(kood);;
 
         }
