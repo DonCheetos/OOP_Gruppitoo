@@ -90,7 +90,7 @@ class ParalleelTöötlemiseks implements Runnable {
                         jälgimiskes++;
                         break;
                     case CREATE_USER:
-                        Server_Operations.createUser(in,out,mitmesKlient,kasutajaInfo);
+                        Server_Operations.createUser(in,out,mitmesKlient,kasutajaInfo,kasutajatelist);
                         break;
                     case CHECK_USER:
                         Server_Operations.checkUser(in,out,mitmesKlient,kasutajaInfo);

@@ -45,7 +45,7 @@ public class Server_Operations { // serveri operatsioonide jaoks class
 
         String kasutajaID = in.readUTF();
         System.out.println("Edastan kliendile (" + kasutajaID + ") sõnumi(d), mis teised on talle vahepeal saatnud.");
-        if(kasutajatelist.containsKey(kasutajaID)){
+        if(!kasutajatelist.containsKey(kasutajaID)){
             System.out.println("ei leidnud kasutajat");
             out.writeInt(0);
             return;
@@ -108,8 +108,7 @@ public class Server_Operations { // serveri operatsioonide jaoks class
             out.writeInt(-5);
         }
     }
-    //dodo paranda siit
-    public static void createUser(DataInputStream in, DataOutputStream out, int mitmesKlient,  Map<String, String> kasutajaInfo) throws IOException {
+    public static void createUser(DataInputStream in, DataOutputStream out, int mitmesKlient,  Map<String, String> kasutajaInfo,Map<String,Kasutaja> kasutajatelist) throws IOException {
         String kasutaja = in.readUTF();
         if (kasutajaInfo.containsKey(kasutaja)){
             out.writeInt(ResponseCodes.getValue(ResponseCodes.USER_TAKEN));
@@ -120,6 +119,7 @@ public class Server_Operations { // serveri operatsioonide jaoks class
         String parool = in.readUTF();
         String paroolRäsi = hashPassword(parool);
         kasutajaInfo.put(kasutaja,paroolRäsi); // kasutaja salvestamine
+        kasutajatelist.put(kasutaja,new Kasutaja(kasutaja,new ArrayList<>()));
         out.writeInt(ResponseCodes.getValue(ResponseCodes.OK));
         System.out.println(mitmesKlient+". registeeriti kasutaja nimega: \"" + kasutaja + "\"");
     }
