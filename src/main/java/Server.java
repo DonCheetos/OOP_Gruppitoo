@@ -12,7 +12,7 @@ public class Server {
     public static void main(String[] args) throws IOException {
         int pordiNumber = 1337;
 
-        ArrayList<Kasutaja> kasutajatelist=new ArrayList<>();
+        Map<String,Kasutaja> kasutajatelist=new HashMap<>();
         Grupp grupp=new Grupp();
         grupp.lisaGrupp("kõik");
 
@@ -35,12 +35,12 @@ public class Server {
 
 class ParalleelTöötlemiseks implements Runnable {
     private final Socket socket;
-    private ArrayList<Kasutaja> kasutajatelist;
+    private Map<String,Kasutaja> kasutajatelist;
     private Grupp grupp;//dodo gruppile sõnumite saatmine
 
     private int mitmesKlient;
 
-    public ParalleelTöötlemiseks(Socket socket, int mitmesKlient, ArrayList<Kasutaja> kasutajatelist,Grupp grupp) {
+    public ParalleelTöötlemiseks(Socket socket, int mitmesKlient, Map<String,Kasutaja> kasutajatelist,Grupp grupp) {
         this.socket = socket;
         this.mitmesKlient = mitmesKlient;
         this.kasutajatelist = kasutajatelist;

@@ -36,18 +36,18 @@ public class Server_Operations { // serveri operatsioonide jaoks class
     }
 
     // server saadab kasutajale salvestaud sõnumi(d)
-    public static void getMessageBacklog(DataInputStream in, DataOutputStream out, int mitmesKlient, ArrayList<Kasutaja> kasutajatelist) throws IOException {
+    public static void getMessageBacklog(DataInputStream in, DataOutputStream out, int mitmesKlient, Map<String,Kasutaja> kasutajatelist) throws IOException {
         System.out.println(ResponseCodes.GET_MESSAGE_BACKLOG);
         out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // kõik korras
 
         String kasutajaID = in.readUTF();
         System.out.println("Edastan kliendile (" + kasutajaID + ") sõnumi(d), mis teised on talle vahepeal saatnud.");
-        if(leiaKasutaja(kasutajatelist,kasutajaID)==null){
+        if(kasutajatelist.containsKey(kasutajaID)){
             System.out.println("ei leidnud kasutajat");
             out.writeInt(0);
             return;
         }
-        List<String> kasutajaleSaadetudSõnumid = leiaLooKasutaja(kasutajatelist,kasutajaID).getSõnumid();
+        List<String> kasutajaleSaadetudSõnumid = kasutajatelist.get(kasutajaID).getSõnumid();
         if (kasutajaleSaadetudSõnumid == null) {
             out.writeInt(0);
             return;
@@ -64,7 +64,7 @@ public class Server_Operations { // serveri operatsioonide jaoks class
     }
 
     // server salvestab sihtkasutajale sõnumeid
-    public static void sendMessageToBacklog(DataInputStream in, DataOutputStream out, int mitmesKlient, ArrayList<Kasutaja> kasutajatelist) throws IOException {
+    public static void sendMessageToBacklog(DataInputStream in, DataOutputStream out, int mitmesKlient, Map<String,Kasutaja> kasutajatelist) throws IOException {
         System.out.println(ResponseCodes.GET_MESSAGE_BACKLOG);
         out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // kõik korras
 
@@ -76,7 +76,10 @@ public class Server_Operations { // serveri operatsioonide jaoks class
         String sõnum = in.readUTF();
 
         //kasutajatelist.get(kasutajatelist.indexOf(new Kasutaja(sihtKasutaja,new ArrayList<>()))).lisaSõnum(sõnum);
-        leiaLooKasutaja(kasutajatelist,sihtKasutaja).lisaSõnum(sõnum);
+        if(!kasutajatelist.containsKey(sihtKasutaja)){
+            kasutajatelist.put(sihtKasutaja,new Kasutaja(sihtKasutaja,new ArrayList<>()));
+        }
+        kasutajatelist.get(sihtKasutaja).lisaSõnum(sõnum);
         System.out.println("Salvestasin tekstisisu.");
         System.out.println(sihtKasutaja + ", sõnum: \"" + sõnum + "\".");
     }
@@ -102,18 +105,5 @@ public class Server_Operations { // serveri operatsioonide jaoks class
             out.writeInt(-5);
         }
     }
-    private static Kasutaja leiaLooKasutaja(ArrayList<Kasutaja> kasutajatelist,String kasutajaNimi){
-        for(Kasutaja kasutaja:kasutajatelist){
-            if(kasutaja.getNimi().equals(kasutajaNimi))return kasutaja;
-        }
-        Kasutaja uus=new Kasutaja(kasutajaNimi,new ArrayList<>());
-        kasutajatelist.add(uus);
-        return uus;
-    }
-    private static Kasutaja leiaKasutaja(ArrayList<Kasutaja> kasutajatelist,String kasutajaNimi){
-        for(Kasutaja kasutaja:kasutajatelist){
-            if(kasutaja.getNimi().equals(kasutajaNimi))return kasutaja;
-        }
-        return null;
-    }
+
 }
