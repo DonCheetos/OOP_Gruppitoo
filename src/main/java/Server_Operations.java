@@ -119,7 +119,7 @@ public class Server_Operations { // serveri operatsioonide jaoks class
         String parool = in.readUTF();
         String paroolRäsi = hashPassword(parool);
         kasutajaInfo.put(kasutaja,paroolRäsi); // kasutaja salvestamine
-        kasutajatelist.put(kasutaja,new Kasutaja(kasutaja,new ArrayList<>()));
+        if(!kasutajatelist.containsKey(kasutaja)) kasutajatelist.put(kasutaja,new Kasutaja(kasutaja,new ArrayList<>()));
         out.writeInt(ResponseCodes.getValue(ResponseCodes.OK));
         System.out.println(mitmesKlient+". registeeriti kasutaja nimega: \"" + kasutaja + "\"");
     }
