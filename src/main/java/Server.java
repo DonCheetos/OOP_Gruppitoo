@@ -11,8 +11,13 @@ import java.util.concurrent.Executors;
 public class Server {
     public static void main(String[] args) throws IOException {
         int pordiNumber = 1337;
+
         Map<String, String> kasutajaInfo = new HashMap<>(); // sisaldab kasutajanime ja parooli räsi
-        Map<String, ArrayList<String>> sõnumidKasutajale = new HashMap<>(); // salvestada sõnumeid vastavale kasutajale
+
+        Map<String,Kasutaja> kasutajatelist=new HashMap<>();
+        Grupp grupp=new Grupp();
+        grupp.lisaGrupp("kõik");
+
 
         ExecutorService threads = Executors.newCachedThreadPool();
         int kliendiID = 0; // mingi ID viis kuidas aru saada, kellega tegemist
@@ -24,7 +29,7 @@ public class Server {
                 Socket socket = ss.accept();
                 System.out.println(kliendiID + 1 + ". klient on serveriga ühendatud.");
 
-                threads.execute(new ParalleelTöötlemiseks(socket, kliendiID++, sõnumidKasutajale,kasutajaInfo));
+                threads.execute(new ParalleelTöötlemiseks(socket, kliendiID++, kasutajatelist, grupp,kasutajaInfo));
             }
         }
     }
@@ -32,14 +37,17 @@ public class Server {
 
 class ParalleelTöötlemiseks implements Runnable {
     private final Socket socket;
-    public Map<String, ArrayList<String>> sõnumidKasutajale;
+    private Map<String,Kasutaja> kasutajatelist;
+    private Grupp grupp;//dodo gruppile sõnumite saatmine
+
     private int mitmesKlient;
     Map<String, String> kasutajaInfo;
 
-    public ParalleelTöötlemiseks(Socket socket, int mitmesKlient, Map<String, ArrayList<String>> sõnumidKasutajale, Map<String, String> kasutajaInfo) {
+    public ParalleelTöötlemiseks(Socket socket, int mitmesKlient, Map<String,Kasutaja> kasutajatelist,Grupp grupp,Map<String, String> kasutajaInfo) {
         this.socket = socket;
         this.mitmesKlient = mitmesKlient;
-        this.sõnumidKasutajale = sõnumidKasutajale;
+        this.kasutajatelist = kasutajatelist;
+        this.grupp=grupp;
         this.kasutajaInfo = kasutajaInfo;
     }
 
@@ -68,12 +76,12 @@ class ParalleelTöötlemiseks implements Runnable {
                         break;
 
                     case GET_MESSAGE_BACKLOG:
-                        Server_Operations.getMessageBacklog(in, out, mitmesKlient, sõnumidKasutajale);
+                        Server_Operations.getMessageBacklog(in, out, mitmesKlient, kasutajatelist);
                         jälgimiskes++;
                         break;
 
                     case SEND_MESSAGE_TO_BACKLOG:
-                        Server_Operations.sendMessageToBacklog(in, out, mitmesKlient, sõnumidKasutajale);
+                        Server_Operations.sendMessageToBacklog(in, out, mitmesKlient, kasutajatelist);
                         jälgimiskes+=2;
                         break;
 

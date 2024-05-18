@@ -71,7 +71,7 @@ public enum ResponseCodes {
                 "file $path",
                 "sendfile $path",
                 "getsonum $kasutaja",
-                "writesonum $saaja $sõnum",
+                "writesonum $saatja $saaja $sõnum",
                 "createuser $kasutaja $parool",
                 "checkuser $kasutaja $parool"
         };

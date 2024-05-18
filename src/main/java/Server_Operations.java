@@ -39,13 +39,18 @@ public class Server_Operations { // serveri operatsioonide jaoks class
     }
 
     // server saadab kasutajale salvestaud sõnumi(d)
-    public static void getMessageBacklog(DataInputStream in, DataOutputStream out, int mitmesKlient, Map<String, ArrayList<String>> sõnumidKasutajale) throws IOException {
+    public static void getMessageBacklog(DataInputStream in, DataOutputStream out, int mitmesKlient, Map<String,Kasutaja> kasutajatelist) throws IOException {
         System.out.println(ResponseCodes.GET_MESSAGE_BACKLOG);
         out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // kõik korras
 
         String kasutajaID = in.readUTF();
         System.out.println("Edastan kliendile (" + kasutajaID + ") sõnumi(d), mis teised on talle vahepeal saatnud.");
-        List<String> kasutajaleSaadetudSõnumid = sõnumidKasutajale.get(kasutajaID);
+        if(kasutajatelist.containsKey(kasutajaID)){
+            System.out.println("ei leidnud kasutajat");
+            out.writeInt(0);
+            return;
+        }
+        List<String> kasutajaleSaadetudSõnumid = kasutajatelist.get(kasutajaID).getSõnumid();
         if (kasutajaleSaadetudSõnumid == null) {
             out.writeInt(0);
             return;
@@ -62,23 +67,24 @@ public class Server_Operations { // serveri operatsioonide jaoks class
     }
 
     // server salvestab sihtkasutajale sõnumeid
-    public static void sendMessageToBacklog(DataInputStream in, DataOutputStream out, int mitmesKlient, Map<String, ArrayList<String>> sõnumidKasutajale) throws IOException {
+    public static void sendMessageToBacklog(DataInputStream in, DataOutputStream out, int mitmesKlient, Map<String,Kasutaja> kasutajatelist) throws IOException {
         System.out.println(ResponseCodes.GET_MESSAGE_BACKLOG);
         out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // kõik korras
 
         String sihtKasutaja = in.readUTF();
         System.out.println("Sihkasutaja: " + sihtKasutaja + ".");
 
-        if (!sõnumidKasutajale.containsKey(sihtKasutaja)) { // lisab puuduva kasutaja
-            sõnumidKasutajale.put(sihtKasutaja, new ArrayList<>());
-        }
 
         out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // kõik korras, kasutaja olemas
         String sõnum = in.readUTF();
 
-        sõnumidKasutajale.get(sihtKasutaja).add(sõnum);
+        //kasutajatelist.get(kasutajatelist.indexOf(new Kasutaja(sihtKasutaja,new ArrayList<>()))).lisaSõnum(sõnum);
+        if(!kasutajatelist.containsKey(sihtKasutaja)){
+            kasutajatelist.put(sihtKasutaja,new Kasutaja(sihtKasutaja,new ArrayList<>()));
+        }
+        kasutajatelist.get(sihtKasutaja).lisaSõnum(sõnum);
         System.out.println("Salvestasin tekstisisu.");
-        System.out.println(sihtKasutaja + ", sõnum: \"" + sõnumidKasutajale.get(sihtKasutaja) + "\".");
+        System.out.println(sihtKasutaja + ", sõnum: \"" + sõnum + "\".");
     }
 
     // server salvestab faili "received/" kasusta
@@ -102,7 +108,7 @@ public class Server_Operations { // serveri operatsioonide jaoks class
             out.writeInt(-5);
         }
     }
-
+    //dodo paranda siit
     public static void createUser(DataInputStream in, DataOutputStream out, int mitmesKlient,  Map<String, String> kasutajaInfo) throws IOException {
         String kasutaja = in.readUTF();
         if (kasutajaInfo.containsKey(kasutaja)){
