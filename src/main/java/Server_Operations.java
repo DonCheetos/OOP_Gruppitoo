@@ -42,12 +42,12 @@ public class Server_Operations { // serveri operatsioonide jaoks class
 
         String kasutajaID = in.readUTF();
         System.out.println("Edastan kliendile (" + kasutajaID + ") sõnumi(d), mis teised on talle vahepeal saatnud.");
-        if(kasutajatelist.lastIndexOf(kasutajaID)==-1){
+        if(leiaKasutaja(kasutajatelist,kasutajaID)==null){
             System.out.println("ei leidnud kasutajat");
             out.writeInt(0);
             return;
         }
-        List<String> kasutajaleSaadetudSõnumid = kasutajatelist.get(kasutajatelist.lastIndexOf(kasutajaID)).getSõnumid();//dodo vigane
+        List<String> kasutajaleSaadetudSõnumid = leiaLooKasutaja(kasutajatelist,kasutajaID).getSõnumid();
         if (kasutajaleSaadetudSõnumid == null) {
             out.writeInt(0);
             return;
@@ -71,19 +71,12 @@ public class Server_Operations { // serveri operatsioonide jaoks class
         String sihtKasutaja = in.readUTF();
         System.out.println("Sihkasutaja: " + sihtKasutaja + ".");
 
-        if (kasutajatelist.contains(sihtKasutaja)) { // lisab puuduva kasutaja
-            kasutajatelist.add(new Kasutaja(sihtKasutaja,new ArrayList<>()));
-        }
 
         out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // kõik korras, kasutaja olemas
         String sõnum = in.readUTF();
 
-        if(kasutajatelist.lastIndexOf(sihtKasutaja)==-1){
-            kasutajatelist.add(new Kasutaja(sihtKasutaja,new ArrayList<>()));
-
-        }
-
-        kasutajatelist.get(kasutajatelist.indexOf(new Kasutaja(sihtKasutaja,new ArrayList<>()))).lisaSõnum(sõnum);//dodo vigane
+        //kasutajatelist.get(kasutajatelist.indexOf(new Kasutaja(sihtKasutaja,new ArrayList<>()))).lisaSõnum(sõnum);
+        leiaLooKasutaja(kasutajatelist,sihtKasutaja).lisaSõnum(sõnum);
         System.out.println("Salvestasin tekstisisu.");
         System.out.println(sihtKasutaja + ", sõnum: \"" + sõnum + "\".");
     }
@@ -108,5 +101,19 @@ public class Server_Operations { // serveri operatsioonide jaoks class
             System.out.println(e.getMessage());
             out.writeInt(-5);
         }
+    }
+    private static Kasutaja leiaLooKasutaja(ArrayList<Kasutaja> kasutajatelist,String kasutajaNimi){
+        for(Kasutaja kasutaja:kasutajatelist){
+            if(kasutaja.getNimi().equals(kasutajaNimi))return kasutaja;
+        }
+        Kasutaja uus=new Kasutaja(kasutajaNimi,new ArrayList<>());
+        kasutajatelist.add(uus);
+        return uus;
+    }
+    private static Kasutaja leiaKasutaja(ArrayList<Kasutaja> kasutajatelist,String kasutajaNimi){
+        for(Kasutaja kasutaja:kasutajatelist){
+            if(kasutaja.getNimi().equals(kasutajaNimi))return kasutaja;
+        }
+        return null;
     }
 }
