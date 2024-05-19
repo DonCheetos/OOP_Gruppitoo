@@ -3,6 +3,8 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -28,6 +30,9 @@ public class GUI extends JDialog {
         frame.setSize(800, 600);
         frame.setMinimumSize(new Dimension(600, 300));
 
+        setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, Set.of(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0)));
+        setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, Set.of(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0)));
+
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(new EmptyBorder(10, 10, 10, 10));
         panel.setBackground(new Color(240, 240, 240));
@@ -48,17 +53,25 @@ public class GUI extends JDialog {
         topPanel.add(saajaLabel);
         topPanel.add(saajavali);
 
+//        JPanel nupud = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+
         JButton logiVäljaNupp = new JButton("Logi välja");
         logiVäljaNupp.addActionListener(e -> {
             throw new LogiVälja("Rakendusest logiti välja!");
         });
-        topPanel.add(logiVäljaNupp);
+        logiVäljaNupp.addKeyListener(looEnterKuulaja(() -> {
+            throw new LogiVälja("Rakendusest logiti välja!");
+        }));
+        topPanel.add(logiVäljaNupp, BorderLayout.EAST);
 
         JButton sulgeNupp = new JButton("Sulge");
         sulgeNupp.addActionListener(e -> {
             throw new Sulge("Rakendus sulgeti!");
         });
-        topPanel.add(sulgeNupp);
+        sulgeNupp.addKeyListener(looEnterKuulaja(() -> {
+            throw new Sulge("Rakendus sulgeti!");
+        }));
+        topPanel.add(sulgeNupp, BorderLayout.EAST);
 
         panel.add(topPanel, BorderLayout.NORTH);
 
@@ -76,29 +89,32 @@ public class GUI extends JDialog {
         JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         buttonsPanel.setBackground(new Color(230, 230, 230));
 
-        JButton saadanupp;
+        JButton saadaNupp;
         try {
             Image sendIcon = ImageIO.read(new File("icons", "send-button.png")).getScaledInstance(30, 30, Image.SCALE_SMOOTH);
-            saadanupp = new JButton(new ImageIcon(sendIcon));
+            saadaNupp = new JButton(new ImageIcon(sendIcon));
         } catch (IOException e) {
-            saadanupp = new JButton("Saada");
+            saadaNupp = new JButton("Saada");
         }
-        saadanupp.addActionListener(e -> sendMessage());
-        buttonsPanel.add(saadanupp);
+        saadaNupp.addActionListener(e -> sendMessage());
+        saadaNupp.addKeyListener(looEnterKuulaja(this::sendMessage));
+        buttonsPanel.add(saadaNupp);
 
-        JButton failinupp;
+        JButton failiNupp;
         try {
             Image fileIcon = ImageIO.read(new File("icons", "folder-icon.png")).getScaledInstance(30, 30, Image.SCALE_SMOOTH);
-            failinupp = new JButton(new ImageIcon(fileIcon));
+            failiNupp = new JButton(new ImageIcon(fileIcon));
         } catch (IOException e) {
-            failinupp = new JButton("Vali fail");
+            failiNupp = new JButton("Vali fail");
         }
-        failinupp.addActionListener(e -> selectFile(frame));
-        buttonsPanel.add(failinupp);
+        failiNupp.addActionListener(e -> selectFile(frame));
+        failiNupp.addKeyListener(looEnterKuulaja(() -> selectFile(frame)));
+        buttonsPanel.add(failiNupp);
 
         bottomPanel.add(buttonsPanel, BorderLayout.WEST);
 
         sonumivali = new JTextField(20);
+        sonumivali.addKeyListener(looEnterKuulaja(this::sendMessage));
         bottomPanel.add(sonumivali, BorderLayout.CENTER);
 
         panel.add(bottomPanel, BorderLayout.SOUTH);
@@ -106,15 +122,15 @@ public class GUI extends JDialog {
         frame.add(panel);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        kasutaja.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyTyped(java.awt.event.KeyEvent evt) {
+        kasutaja.addKeyListener(new KeyAdapter() {
+            public void keyTyped(KeyEvent evt) {
                 if (kasutaja.getText().length() >= 12)
                     evt.consume();
             }
         });
 
-        saajavali.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyTyped(java.awt.event.KeyEvent evt) {
+        saajavali.addKeyListener(new KeyAdapter() {
+            public void keyTyped(KeyEvent evt) {
                 if (saajavali.getText().length() >= 12)
                     evt.consume();
             }
@@ -127,6 +143,16 @@ public class GUI extends JDialog {
         scheduler = Executors.newScheduledThreadPool(1);
         Runnable task = this::getMessage;
         scheduler.scheduleAtFixedRate(task, 0, 1, TimeUnit.SECONDS);
+    }
+
+    public KeyAdapter looEnterKuulaja(Runnable r) {
+        return new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent evt) {
+                if (evt.getKeyCode() == KeyEvent.VK_ENTER)
+                    r.run();
+            }
+        };
     }
 
     public void peata() {
