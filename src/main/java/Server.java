@@ -9,26 +9,27 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Server {
-    protected Map<Integer, ArrayList<String>> laekunudSõnumid;
-    private int pordiNumber;
-
-    public Server(int pordiNumber) {
-        this.pordiNumber = pordiNumber;
-        laekunudSõnumid = new HashMap<>();
-    }
-
     public static void main(String[] args) throws IOException {
-        ExecutorService threads = Executors.newCachedThreadPool();
+        int pordiNumber = 1337;
 
-        Server server = new Server(1337); // loob uue serveri
-        try (ServerSocket ss = new ServerSocket(server.pordiNumber)) { // hõivab porti, kus hakkab toimetama
-            System.out.println("Server ootab ühendusi pordil: " + server.pordiNumber + ".");
-            System.out.println("----------------");
+        Map<String, String> kasutajaInfo = new HashMap<>(); // sisaldab kasutajanime ja parooli räsi
+
+        Map<String,Kasutaja> kasutajatelist=new HashMap<>();
+        Grupp grupp=new Grupp();
+        grupp.lisaGrupp("kõik");
+
+
+        ExecutorService threads = Executors.newCachedThreadPool();
+        int kliendiID = 0; // mingi ID viis kuidas aru saada, kellega tegemist
+
+        try (ServerSocket ss = new ServerSocket(pordiNumber)) { // hõivab porti, kus hakkab toimetama
+            System.out.println("Server ootab ühendusi pordil: " + pordiNumber + ".");
+            System.out.println("-".repeat(50));
             while (true) {
                 Socket socket = ss.accept();
-                System.out.println("Klient on serveriga ühendatud.");
+                System.out.println(kliendiID + 1 + ". klient on serveriga ühendatud.");
 
-                threads.execute(new ParalleelTöötlemiseks(socket, server.laekunudSõnumid));
+                threads.execute(new ParalleelTöötlemiseks(socket, kliendiID++, kasutajatelist, grupp,kasutajaInfo));
             }
         }
     }
@@ -36,11 +37,18 @@ public class Server {
 
 class ParalleelTöötlemiseks implements Runnable {
     private final Socket socket;
-    public Map<Integer, ArrayList<String>> laekunudSõnumid;
+    private Map<String,Kasutaja> kasutajatelist;
+    private Grupp grupp;//dodo gruppile sõnumite saatmine
 
-    public ParalleelTöötlemiseks(Socket socket, Map<Integer, ArrayList<String>> laekunudSõnumid) {
+    private int mitmesKlient;
+    Map<String, String> kasutajaInfo;
+
+    public ParalleelTöötlemiseks(Socket socket, int mitmesKlient, Map<String,Kasutaja> kasutajatelist,Grupp grupp,Map<String, String> kasutajaInfo) {
         this.socket = socket;
-        this.laekunudSõnumid = laekunudSõnumid;
+        this.mitmesKlient = mitmesKlient;
+        this.kasutajatelist = kasutajatelist;
+        this.grupp=grupp;
+        this.kasutajaInfo = kasutajaInfo;
     }
 
     @Override
@@ -49,133 +57,58 @@ class ParalleelTöötlemiseks implements Runnable {
              DataInputStream in = new DataInputStream(socket.getInputStream());
              DataOutputStream out = new DataOutputStream(socket.getOutputStream())) {
 
-            int kliendiID = in.readInt(); // Serveriga ühendunud kliendi ID
-            int sõnumiteArv = in.readInt(); // Kliendi saadetavate sõnumite koguarv
-            System.out.println("Kliendi ID=" + kliendiID + ".");
-            System.out.println("Kliendilt oodatud sõnumite arv: " + sõnumiteArv + ".");
-
+            int sõnumiteArv = in.readInt();
+            System.out.println(mitmesKlient + 1 + ". kliendilt oodatud sõnumite arv: " + sõnumiteArv + ".");
             int jälgimiskes = 0;
-            while (jälgimiskes < sõnumiteArv - 1) {
+            while(sõnumiteArv != jälgimiskes){
                 System.out.println();
-                ResponseCodes sõnumiTüüp = ResponseCodes.getCode(in.readInt());
-                jälgimiskes++;
+                ResponseCodes sõnumiTüüp = ResponseCodes.getCode(in.readInt()); jälgimiskes++;
 
-                String failiNimi;
-                switch (sõnumiTüüp) {
+                switch (sõnumiTüüp) { // teostatakse serverile saadetud päringuid
                     case SEND_ECHO:
-                        System.out.println(ResponseCodes.SEND_ECHO);
-                        out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // kinnitab, et kõik on korras, võib jätkata
-
-                        String echoSõnum = in.readUTF();
+                        Server_Operations.sendEcho(in, out, mitmesKlient);
                         jälgimiskes++;
-                        System.out.println("Klient saatis sõnumi: \"" + echoSõnum + "\".");
-
-                        out.writeUTF(echoSõnum);
-                        break;
-
-                    case GET_MESSAGE_BACKLOG:
-                        System.out.println(ResponseCodes.GET_MESSAGE_BACKLOG);
-                        out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // kõik korras
-
-                        System.out.println("Edastan kliendile (ID=" + kliendiID + ") sõnumi(d), mis teised on talle vahepeal saatnud.");
-                        List<String> kasutajaleSaadetudSõnumid = laekunudSõnumid.get(kliendiID);
-                        if (kasutajaleSaadetudSõnumid == null) {
-                            System.out.println("Kliendile pole sõnumeid saadetud.");
-                            out.writeInt(0);
-                            break;
-                        }
-
-                        int sõnumiteKogus = kasutajaleSaadetudSõnumid.size();
-                        out.writeInt(sõnumiteKogus);
-                        System.out.println("Kliendile on saadetud " + sõnumiteKogus + " sõnum(it): " + laekunudSõnumid.get(kliendiID));
-
-                        for (String sõnum : kasutajaleSaadetudSõnumid)
-                            out.writeUTF(sõnum);
-
-                        kasutajaleSaadetudSõnumid.clear(); // puhastab listi, kuna kõik sõnumid on loetud
-                        break;
-
-                    case SEND_MESSAGE_TO_BACKLOG:
-                        System.out.println(ResponseCodes.SEND_MESSAGE_TO_BACKLOG);
-                        out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // kõik korras
-
-                        int sihtKasutajaID = in.readInt();
-                        jälgimiskes++;
-                        System.out.println("Sihkasutaja: ID=" + sihtKasutajaID + ".");
-
-                        if (!laekunudSõnumid.containsKey(sihtKasutajaID)) { // !!! kas siin ei peaks mitte uut kasutajat looma ja talle jätma !!!
-                            System.out.println("Kasutajat (ID=" + sihtKasutajaID + ") ei leitud. Loon uue kasutaja sõnumite loendi.");
-                            laekunudSõnumid.put(sihtKasutajaID, new ArrayList<>());
-                        }
-
-                        String sõnum = in.readUTF();
-                        jälgimiskes++;
-
-                        laekunudSõnumid.get(sihtKasutajaID).add(sõnum);
-                        System.out.println("Salvestasin tekstisisu.");
-                        System.out.println("Sõnumid kasutajale (ID=" + sihtKasutajaID + "): \"" + laekunudSõnumid.get(sihtKasutajaID) + "\".");
-                        break;
-
-                    case SEND_FILE_TO_SERVER:
-                        System.out.println(ResponseCodes.SEND_FILE_TO_SERVER);
-                        out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // kõik korras
-
-                        failiNimi = in.readUTF();
-                        jälgimiskes++;
-
-                        ResponseCodes tagagastusKood = ResponseCodes.getCode(in.readInt());
-                        if (tagagastusKood != ResponseCodes.OK)
-                            System.out.println("Faili (\"" + failiNimi + "\") edastamine ebaõnnestus.");
-                        System.out.println("Saan kliendilt faili: \"" + failiNimi + "\".");
-
-                        int failisuurus = in.readInt();
-                        try (FileOutputStream fos = new FileOutputStream("src/main/resources/server/" + failiNimi)) {
-                            System.out.print("Fail leitud... ");
-                            fos.write(in.readNBytes(failisuurus));
-                            out.writeInt(ResponseCodes.getValue(ResponseCodes.OK));
-                            System.out.println("salvestatud.");
-                        } catch (IOException e) {
-                            System.out.println("Faili salvestamine ebaõnnestus.");
-                            System.out.println(e.getMessage());
-                            out.writeInt(ResponseCodes.getValue(ResponseCodes.FILE_WRITING_ERROR));
-                        }
                         break;
 
                     case GET_FILE:
-                        System.out.println(ResponseCodes.GET_FILE);
-                        out.writeInt(ResponseCodes.getValue(ResponseCodes.OK));
-
-                        failiNimi = in.readUTF();
+                        Server_Operations.getFile(in, out, mitmesKlient);
                         jälgimiskes++;
-                        System.out.println("Klient tahab saada faili: \"" + failiNimi + "\".");
+                        break;
 
-                        try (InputStream failStream = new FileInputStream("src/main/resources/server/" + failiNimi)) {
-                            out.writeInt(ResponseCodes.getValue(ResponseCodes.OK)); // fail leitud
-                            System.out.print("Fail leitud... ");
-                            byte[] fail = failStream.readAllBytes();
-                            out.writeInt(fail.length);
-                            out.write(fail);
-                            System.out.println("saadetud.");
-                        } catch (FileNotFoundException e) {
-                            System.out.println("Kliendile saadetakse veateade, kuna faili (\"" + failiNimi + "\") ei leitud.");
-                            out.writeInt(ResponseCodes.getValue(ResponseCodes.FILE_NOT_FOUND)); // saadab kliendile teate, et faili ei leitud
-                        }
+                    case GET_MESSAGE_BACKLOG:
+                        Server_Operations.getMessageBacklog(in, out, mitmesKlient, kasutajatelist);
+                        jälgimiskes++;
+                        break;
+
+                    case SEND_MESSAGE_TO_BACKLOG:
+                        Server_Operations.sendMessageToBacklog(in, out, mitmesKlient, kasutajatelist);
+                        jälgimiskes+=2;
+                        break;
+
+                    case SEND_FILE_TO_SERVER:
+                        Server_Operations.sendFileToServer(in, out, mitmesKlient);
+                        jälgimiskes++;
+                        break;
+                    case CREATE_USER:
+                        Server_Operations.createUser(in,out,mitmesKlient,kasutajaInfo,kasutajatelist);
+                        break;
+                    case CHECK_USER:
+                        Server_Operations.checkUser(in,out,mitmesKlient,kasutajaInfo);
                         break;
 
                     default:
                         System.out.println(ResponseCodes.RESPONSE_CODE_NOT_FOUND);
-                        System.out.println("Kliendile saadetakse veateate, kuna request tüüp on vale: " + sõnumiTüüp + ".");
+                        System.out.println(mitmesKlient + 1 + ". kliendile saadetakse veateate, kuna request tüüp on vale: " + sõnumiTüüp + ".");
                         out.writeInt(ResponseCodes.getValue(ResponseCodes.RESPONSE_CODE_NOT_FOUND)); // antud tüüp oli vale
-                        in.readUTF();
-                        jälgimiskes++;
+                        in.readUTF(); jälgimiskes++;// päringu komplekti välja puhastamiseks
                 }
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
             System.out.println();
-            System.out.println("Klient lõpetab ühenduse.");
-            System.out.println("----------------");
+            System.out.println(mitmesKlient + 1 + ". klient lõpetab ühenduse.");
+            System.out.println("-".repeat(50));
         }
     }
 }
