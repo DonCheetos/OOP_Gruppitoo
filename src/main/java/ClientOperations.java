@@ -19,7 +19,7 @@ public class ClientOperations {//kliendi tegemised oma klassi
 
         ResponseCodes tagastusKood2 = ResponseCodes.getCode(in.readInt());
         if (tagastusKood2 == ResponseCodes.FILE_NOT_FOUND) {
-            System.out.println("Faili (\"" + sõnumiSisu + "\") ei leitud.");
+            System.err.println("Faili (\"" + sõnumiSisu + "\") ei leitud.");
             return;
         }
 
@@ -51,7 +51,7 @@ public class ClientOperations {//kliendi tegemised oma klassi
         for (int i = 0; i < sõnumiteArv; i++) { // loeb kõik sõnumeid
             String sõnum = in.readUTF();
             System.out.println("Saadud sõnum: \"" + sõnum + "\".");
-            try { // Kirjutab faili ka tulemusi mille nimeks saab "'kasutajaID'_msg.txt", praegu kasutatakse seda, et saaks lihtsamini kuvada sõnumeid GUI-s
+            try { // Kirjutab sõnumid faili, mille nimeks saab "'kasutajaID'_msg.txt", praegu kasutatakse seda, et saaks lihtsamini kuvada sõnumeid GUI-s
                 FileUtil.writeToFileSave(kasutajaID+"_msg.txt", sõnum);
                 System.out.println("Sõnum on lisatud faili.");
             } catch (IOException e) {
@@ -80,7 +80,7 @@ public class ClientOperations {//kliendi tegemised oma klassi
                 out.write(fail);
 
             }catch (SocketException e){
-                System.out.println("kirjutamise viga, faili:"+failinimi+" ei õnnestunud kirjutada!");
+                System.err.println("kirjutamise viga, faili:"+failinimi+" ei õnnestunud kirjutada!");
                 //throw e;
             }
 
@@ -89,7 +89,7 @@ public class ClientOperations {//kliendi tegemised oma klassi
     public static int tagastuskoodiLugemine(DataInputStream in) throws IOException {
         int tagastusKood = in.readInt(); // oleku kontrolliks
         if (tagastusKood < 0) { // ERROR
-            System.out.println("Tagastuskood: " + ResponseCodes.getCode(tagastusKood) + ".");
+            System.err.println("Tagastuskood: " + ResponseCodes.getCode(tagastusKood) + ".");
             throw new RuntimeException("Tagastuskoodi viga: " + ResponseCodes.getCode(tagastusKood));
         }
         System.out.println("Tagastuskood: OK.");

@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 public class GUI extends JDialog {
     private final JTextField kasutaja;
     private final JTextField sonumivali;
-    private final JTextField saajavali;
+    private final JTextField saajaVäli;
     private final JTextArea sõnumiKuva;
     private final Set<String> loetudSonumid = new HashSet<>(); // hoidla loetud sõnumite ID-de jaoks
     private final ScheduledExecutorService scheduler;
@@ -49,11 +49,10 @@ public class GUI extends JDialog {
         topPanel.add(kasutaja);
 
         JLabel saajaLabel = new JLabel("Saaja:");
-        saajavali = new JTextField(12);
+        saajaVäli = new JTextField(12);
+        saajaVäli.addKeyListener(looEnterKuulaja(this::sendMessage));
         topPanel.add(saajaLabel);
-        topPanel.add(saajavali);
-
-//        JPanel nupud = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        topPanel.add(saajaVäli);
 
         JButton logiVäljaNupp = new JButton("Logi välja");
         logiVäljaNupp.addActionListener(e -> {
@@ -129,9 +128,9 @@ public class GUI extends JDialog {
             }
         });
 
-        saajavali.addKeyListener(new KeyAdapter() {
+        saajaVäli.addKeyListener(new KeyAdapter() {
             public void keyTyped(KeyEvent evt) {
-                if (saajavali.getText().length() >= 12)
+                if (saajaVäli.getText().length() >= 12)
                     evt.consume();
             }
         });
@@ -160,62 +159,69 @@ public class GUI extends JDialog {
     }
 
     private void sendMessage() {
-        String name = kasutaja.getText();
-        if (name.isEmpty()) {
-            name = "Unknown";
+        String saatja = kasutaja.getText();
+        if (saatja.isEmpty()) {
+            saatja = "Unknown";
         }
 
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy");
         String formattedDateTime = now.format(formatter);
 
-        String message = sonumivali.getText().strip();
-        String receiver = saajavali.getText().strip();
-        String fullSõnum = '(' + formattedDateTime + ") " + name + " : " + message;
+        String sõnum = sonumivali.getText().strip();
+        String saaja = saajaVäli.getText().strip();
+        String koguSõnum = '(' + formattedDateTime + ") " + saatja + " : " + sõnum;
 
-        if (!receiver.isEmpty() && !message.isEmpty()) {
+        if (!saaja.isEmpty() && !sõnum.isEmpty()) {
             try {
                 String[] command;
                 if (valitudfail != null) {
-                    command = new String[]{"writesonum", receiver, fullSõnum, "sendfile", valitudfail.getAbsolutePath()};
+                    command = new String[]{"writesonum", saaja, koguSõnum, "sendfile", valitudfail.getAbsolutePath()};
                 } else {
-                    command = new String[]{"writesonum", receiver, fullSõnum};
+                    command = new String[]{"writesonum", saaja, koguSõnum};
                 }
                 Client.main(command);
 
-                sõnumiKuva.append(fullSõnum + "\n");
-                sõnumiKuva.setCaretPosition(sõnumiKuva.getDocument().getLength());
+                if (!saaja.equals(saatja)) {
+                    sõnumiKuva.append(koguSõnum + "\n");
+                    sõnumiKuva.setCaretPosition(sõnumiKuva.getDocument().getLength());
+                }
                 sonumivali.setText("");
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         } else {
-            System.err.println("Saaja ja sõnumi lahter peab olema täidetud!");
+            System.err.println("Saaja ja sõnumi lahter peavad olema täidetud!");
+            JOptionPane.showMessageDialog(this, "Saaja ja sõnumi lahter peavad olema täidetud!", "Viga", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void getMessage() {
-        String receiver = kasutaja.getText();
+        String saaja = kasutaja.getText();
 
-        if (receiver.isEmpty()) {
-            System.err.println("Kasutaja lahter ei tohi olla tühi");
-        } else if (receiver.equals("Unknown")) {
-            System.err.println("Külialisena sõnumeid ei saa lugeda, ainult saata");
+        if (saaja.isEmpty()) {
+            System.err.println("Kasutaja lahter ei tohi olla tühi!");
+            JOptionPane.showMessageDialog(this, "Kasutaja lahter ei tohi olla tühi!", "Viga", JOptionPane.ERROR_MESSAGE);
+        } else if (saaja.equals("Unknown")) {
+            System.err.println("Külalisena sõnumeid ei saa lugeda, ainult saata!");
+            JOptionPane.showMessageDialog(this, "Külalisena sõnumeid ei saa lugeda, ainult saata!", "Viga", JOptionPane.ERROR_MESSAGE);
         } else {
             try {
-                String[] command = {"getsonum", receiver};
+                String[] command = {"getsonum", saaja};
                 Client.main(command);
 
                 try {
-                    List<String> messages = FileUtil.readFromFile(receiver + "_msg.txt");
-                    for (String message : messages) {
-                        if (loetudSonumid.add(message)) { // lisa ja kontrolli kas uus sõnum
-                            sõnumiKuva.append(message + "\n");
+                    List<String> messages = FileUtil.readFromFile(saaja + "_msg.txt");
+                    for (String sõnum : messages) {
+                        if (loetudSonumid.add(sõnum)) { // lisa ja kontrolli kas uus sõnum
+                            String saatja = sõnum.split(" ")[2];
+                            System.out.println("." + saatja + ".");
+                            sõnumiKuva.append(sõnum + (saaja.equals(saatja) ? " (edukalt iseendale saadetud)\n" : "\n"));
                         }
                     }
                     sõnumiKuva.setCaretPosition(sõnumiKuva.getDocument().getLength());
                 } catch (IOException e) {
-                    System.err.println("Sõnumeid polnud");
+                    System.out.println("Sõnumeid polnud");
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -235,7 +241,8 @@ public class GUI extends JDialog {
                 }
                 sõnumiKuva.setCaretPosition(sõnumiKuva.getDocument().getLength());
             } catch (IOException e) {
-                System.err.println("Eelnevaid sõnumeid ei õnnestunud laadida");
+                System.err.println("Eelnevaid sõnumeid ei õnnestunud laadida!");
+                JOptionPane.showMessageDialog(this, "Eelnevaid sõnumeid ei õnnestunud laadida!", "Viga", JOptionPane.ERROR_MESSAGE);
             }
         }
     }

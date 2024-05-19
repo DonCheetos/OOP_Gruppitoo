@@ -15,8 +15,8 @@ public class LoginAken extends JDialog {
         super(parent, true);
         JPanel paneel = new JPanel(new GridLayout(2, 1));
 
-//        setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TAVERSAL_KEYS, Set.of(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0)));
-//        setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, Set.of(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0)));
+        setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, Set.of(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0)));
+        setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, Set.of(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0)));
 
         JPanel üleminePaneel = new JPanel(new GridLayout(2, 2));
         üleminePaneel.add(new JLabel("Kasutajanimi:"));

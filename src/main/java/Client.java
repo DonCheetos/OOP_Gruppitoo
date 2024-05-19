@@ -1,13 +1,12 @@
 import java.io.*;
 import java.net.Socket;
-import java.net.SocketException;
 
 // käsurida: echo Tere writesonum "Sõnum, see on sõnum"
 public class Client {
     public static void main(String[] args) throws IOException {
         int pordiNumber = 1337;
         int sõnumiSuurus = args.length;
-        if(args.length==0){//ütlen võimalikud käsud kui midagi ei anta ette
+        if (args.length == 0) {//ütlen võimalikud käsud kui midagi ei anta ette
             System.out.println("Võimalikud sisendid on{");
             ResponseCodes.koodid();//väljastab sisendid
             System.out.println("}");
@@ -54,39 +53,34 @@ public class Client {
                         out.writeInt(ResponseCodes.getValue(ResponseCodes.RESPONSE_CODE_NOT_FOUND));
                 }
 
-                int tagastusKood = in.readInt(); // oleku kontrolliks
-                if (tagastusKood < 0) { // ERROR
-                    System.out.println("Tagastuskood: " + ResponseCodes.getCode(tagastusKood) + ".");
-                    throw new RuntimeException("Tagastuskoodi viga: " + ResponseCodes.getCode(tagastusKood));
-                }
-                System.out.println("Tagastuskood: OK.");
+                int tagastusKood = ClientOperations.tagastuskoodiLugemine(in);
 
                 String sõnumiSisu = args[jälgimiseks++]; // sõnum või failinimi
                 switch (infoTüüp) {
                     case SEND_ECHO: // kasutaja saadab echo-sõnumi
-                        ClientOperations.sendEcho(in,out,sõnumiSisu);
+                        ClientOperations.sendEcho(in, out, sõnumiSisu);
                         break;
 
                     case GET_MESSAGE_BACKLOG: // kasutaja küsib sõnumeid serverilt
                         System.out.println(ResponseCodes.GET_MESSAGE_BACKLOG);
                         String kasutajaID = sõnumiSisu; // loeb käasureal kasutajanime
-                        ClientOperations.getMessage(in,out,kasutajaID);
+                        ClientOperations.getMessage(in, out, kasutajaID);
 
                         break;
 
                     case SEND_MESSAGE_TO_BACKLOG: // kirjutab mingi sõnumi kasutajale, käasureal järjekord 'requestTüüp kasutaja sõnum'
-                        String saajaID = sõnumiSisu; // loeb käasureal kasutajanime
+                        String saajaNimi = sõnumiSisu; // loeb käasureal kasutajanime
                         sõnumiSisu = args[jälgimiseks++];
-                        ClientOperations.sendMessage(in,out,saajaID,sõnumiSisu);
+                        ClientOperations.sendMessage(in, out, saajaNimi, sõnumiSisu);
 
                         break;
                     case SEND_FILE_TO_SERVER:
-                        ClientOperations.sendFile(in,out,sõnumiSisu);
+                        ClientOperations.sendFile(in, out, sõnumiSisu);
 
                         break;
 
                     case GET_FILE: // küsib serverilt faili
-                        ClientOperations.getFile(in,out,sõnumiSisu);
+                        ClientOperations.getFile(in, out, sõnumiSisu);
 
                         break;
                 }
@@ -95,6 +89,7 @@ public class Client {
             System.out.println("\nServerist lahti ühendatud.");
         }
     }
+
     public static void writeToFileSaved(String filename, String message) throws IOException { // kirjutab sõnumeid mida saadi
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename, true))) {
             writer.write(message);

@@ -4,6 +4,14 @@ public class Kasutaja {
     private String nimi;
     private ArrayList<String> sõnumid;
 
+    @Override
+    public String toString() {
+        return "Kasutaja{" +
+                "nimi='" + nimi + '\'' +
+                ", sõnumid=" + sõnumid +
+                '}';
+    }
+
     public Kasutaja(String nimi, ArrayList<String> sõnumid) {
         this.nimi = nimi;
         this.sõnumid = sõnumid;

@@ -5,10 +5,12 @@ public class GUIManager {
         SwingUtilities.invokeLater(() -> {
             JFrame login = new JFrame("Logi sisse");
             LoginAken loginDialog = new LoginAken(login);
+//            login.setVisible(true);
             loginDialog.setVisible(true);
 
             if (!loginDialog.isLoginOk()) {
-                System.err.println("Kasutaja ei eksisteeri või parool on vale");
+                System.err.println("Kasutaja ei eksisteeri või parool on vale!");
+                JOptionPane.showMessageDialog(loginDialog, "Kasutaja ei eksisteeri või parool on vale!", "Viga", JOptionPane.ERROR_MESSAGE);
                 System.exit(0);
             }
 
@@ -23,7 +25,8 @@ public class GUIManager {
                     loginDialog.setVisible(true);
 
                     if (!loginDialog.isLoginOk()) {
-                        System.err.println("Kasutaja ei eksisteeri või parool on vale");
+                        System.err.println("Kasutaja ei eksisteeri või parool on vale!");
+                        JOptionPane.showMessageDialog(loginDialog, "Kasutaja ei eksisteeri või parool on vale!", "Viga", JOptionPane.ERROR_MESSAGE);
                         System.exit(0);
                     }
 
@@ -35,6 +38,7 @@ public class GUIManager {
                     System.exit(0);
                 } else {
                     System.err.println("Uncaught exception on " + thread + ": " + throwable.getMessage());
+                    JOptionPane.showMessageDialog(rakendus, "Tekkis ootamatu viga!", "Viga", JOptionPane.ERROR_MESSAGE);
                     throwable.printStackTrace();
                 }
             });
