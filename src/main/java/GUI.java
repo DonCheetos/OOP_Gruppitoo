@@ -14,20 +14,17 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class GUI {
-    private JFrame frame;
-    private JTextField kasutaja;
-    private JTextField sonumivali;
-    private JTextField saajavali;
-    private JButton saadanupp;
-    private JButton failinupp;
-    private JTextArea sõnumiKuva;
 
+public class GUI extends JDialog {
+    private final JTextField kasutaja;
+    private final JTextField sonumivali;
+    private final JTextField saajavali;
+    private final JTextArea sõnumiKuva;
+    private final Set<String> loetudSonumid = new HashSet<>(); // hoidla loetud sõnumite ID-de jaoks
+    private final ScheduledExecutorService scheduler;
     private File valitudfail;
-    private Set<String> loetudSonumid = new HashSet<>(); // hoidla loetud sõnumite ID-de jaoks
 
-    public GUI(String kasutajanimi) {
-        frame = new JFrame("Sõnumi rakendus");
+    public GUI(JFrame frame, String kasutajanimi) {
         frame.setSize(800, 600);
         frame.setMinimumSize(new Dimension(600, 300));
 
@@ -51,6 +48,18 @@ public class GUI {
         topPanel.add(saajaLabel);
         topPanel.add(saajavali);
 
+        JButton logiVäljaNupp = new JButton("Logi välja");
+        logiVäljaNupp.addActionListener(e -> {
+            throw new LogiVälja("Rakendusest logiti välja!");
+        });
+        topPanel.add(logiVäljaNupp);
+
+        JButton sulgeNupp = new JButton("Sulge");
+        sulgeNupp.addActionListener(e -> {
+            throw new Sulge("Rakendus sulgeti!");
+        });
+        topPanel.add(sulgeNupp);
+
         panel.add(topPanel, BorderLayout.NORTH);
 
         JPanel centerPanel = new JPanel(new BorderLayout());
@@ -67,6 +76,7 @@ public class GUI {
         JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         buttonsPanel.setBackground(new Color(230, 230, 230));
 
+        JButton saadanupp;
         try {
             Image sendIcon = ImageIO.read(new File("icons", "send-button.png")).getScaledInstance(30, 30, Image.SCALE_SMOOTH);
             saadanupp = new JButton(new ImageIcon(sendIcon));
@@ -76,13 +86,14 @@ public class GUI {
         saadanupp.addActionListener(e -> sendMessage());
         buttonsPanel.add(saadanupp);
 
+        JButton failinupp;
         try {
             Image fileIcon = ImageIO.read(new File("icons", "folder-icon.png")).getScaledInstance(30, 30, Image.SCALE_SMOOTH);
             failinupp = new JButton(new ImageIcon(fileIcon));
         } catch (IOException e) {
             failinupp = new JButton("Vali fail");
         }
-        failinupp.addActionListener(e -> selectFile());
+        failinupp.addActionListener(e -> selectFile(frame));
         buttonsPanel.add(failinupp);
 
         bottomPanel.add(buttonsPanel, BorderLayout.WEST);
@@ -93,7 +104,6 @@ public class GUI {
         panel.add(bottomPanel, BorderLayout.SOUTH);
 
         frame.add(panel);
-        frame.setVisible(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         kasutaja.addKeyListener(new java.awt.event.KeyAdapter() {
@@ -114,9 +124,13 @@ public class GUI {
         laadieelsedSonumid();
 
         // automaatne pollimise süsteem, täidab ülesannet iga 1 sekundi tagant
-        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+        scheduler = Executors.newScheduledThreadPool(1);
         Runnable task = this::getMessage;
         scheduler.scheduleAtFixedRate(task, 0, 1, TimeUnit.SECONDS);
+    }
+
+    public void peata() {
+        scheduler.shutdown();
     }
 
     private void sendMessage() {
@@ -143,7 +157,7 @@ public class GUI {
                 }
                 Client.main(command);
 
-                sõnumiKuva.append(fullSõnum);
+                sõnumiKuva.append(fullSõnum + "\n");
                 sõnumiKuva.setCaretPosition(sõnumiKuva.getDocument().getLength());
                 sonumivali.setText("");
             } catch (IOException e) {
@@ -200,27 +214,12 @@ public class GUI {
         }
     }
 
-    private void selectFile() {
+    private void selectFile(JFrame frame) {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setFileFilter(new FileNameExtensionFilter("Text Files", "txt"));
         int result = fileChooser.showOpenDialog(frame);
         if (result == JFileChooser.APPROVE_OPTION) {
             valitudfail = fileChooser.getSelectedFile();
         }
-    }
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            JFrame parentFrame = new JFrame();
-            LoginAken loginDialog = new LoginAken(parentFrame);
-            loginDialog.setVisible(true);
-
-            if (loginDialog.isLoginOk()) { // login korras jätkab
-                new GUI(loginDialog.getKasutajanimi());
-            } else {
-                System.err.println("Kasutaja ei eksisteeri või parool oli vale");
-                System.exit(0);
-            }
-        });
     }
 }

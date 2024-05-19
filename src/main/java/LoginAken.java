@@ -1,20 +1,24 @@
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
+
+
 public class LoginAken extends JDialog {
-    private JTextField kasutajaVali;
-    private JPasswordField parooliVali;
-    private boolean loginOk;
+    private final JTextField kasutajaVali;
+    private final JPasswordField parooliVali;
+    private boolean loginOk = false;
 
     public LoginAken(JFrame parent) {
-        super(parent, "Logi sisse", true);
-        JPanel panel = new JPanel(new GridLayout(4, 2));
-        panel.add(new JLabel("Kasutajanimi:"));
+        super(parent, true);
+        JPanel paneel = new JPanel(new GridLayout(2, 1));
+
+        JPanel üleminePaneel = new JPanel(new GridLayout(2, 2));
+        üleminePaneel.add(new JLabel("Kasutajanimi:"));
         kasutajaVali = new JTextField(20);
-        panel.add(kasutajaVali);
-        panel.add(new JLabel("Parool:"));
+        üleminePaneel.add(kasutajaVali);
+        üleminePaneel.add(new JLabel("Parool:"));
         parooliVali = new JPasswordField(20);
-        panel.add(parooliVali);
+        üleminePaneel.add(parooliVali);
 
         kasutajaVali.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyTyped(java.awt.event.KeyEvent evt) {
@@ -22,6 +26,8 @@ public class LoginAken extends JDialog {
                     evt.consume();
             }
         });
+
+        JPanel aluminePaneel = new JPanel(new GridLayout(1, 3));
 
         JButton loginNupp = new JButton("Logi sisse");
         loginNupp.addActionListener(e -> {
@@ -34,13 +40,13 @@ public class LoginAken extends JDialog {
             String parool = new String(parooliVali.getPassword());
 
             try {
-                int response = ClientOperations.checkUser(kasutajanimi,parool);
+                int response = ClientOperations.checkUser(kasutajanimi, parool);
                 if (ResponseCodes.getValue(ResponseCodes.OK) == response) {
                     loginOk = true;
                     dispose();
-                } else if (ResponseCodes.getValue(ResponseCodes.USER_NOT_FOUND) == response){
+                } else if (ResponseCodes.getValue(ResponseCodes.USER_NOT_FOUND) == response) {
                     JOptionPane.showMessageDialog(this, "Kasutaja ei eksisteeri", "Viga", JOptionPane.ERROR_MESSAGE);
-                }else if (ResponseCodes.getValue(ResponseCodes.FALSE_PASSWORD) == response){
+                } else if (ResponseCodes.getValue(ResponseCodes.FALSE_PASSWORD) == response) {
                     JOptionPane.showMessageDialog(this, "Vale parool", "Viga", JOptionPane.ERROR_MESSAGE);
                 }
             } catch (IOException ex) {
@@ -48,7 +54,7 @@ public class LoginAken extends JDialog {
                 JOptionPane.showMessageDialog(this, "Serveriga ühenduse loomine ebaõnnestus", "Viga", JOptionPane.ERROR_MESSAGE);
             }
         });
-        panel.add(loginNupp);
+        aluminePaneel.add(loginNupp);
 
         JButton registerNupp = new JButton("Loo kasutaja");
         registerNupp.addActionListener(e -> {
@@ -61,7 +67,7 @@ public class LoginAken extends JDialog {
             String parool = new String(parooliVali.getPassword());
 
             try {
-                int response = ClientOperations.createUser(kasutajanimi,parool);
+                int response = ClientOperations.createUser(kasutajanimi, parool);
                 if (ResponseCodes.getValue(ResponseCodes.OK) == response) {
                     JOptionPane.showMessageDialog(this, "Kasutaja loodud. Nüüd logige sisse.", "Edu", JOptionPane.INFORMATION_MESSAGE);
                 } else if (ResponseCodes.getValue(ResponseCodes.USER_TAKEN) == response) {
@@ -74,9 +80,16 @@ public class LoginAken extends JDialog {
                 JOptionPane.showMessageDialog(this, "Serveriga ühenduse loomine ebaõnnestus", "Viga", JOptionPane.ERROR_MESSAGE);
             }
         });
-        panel.add(registerNupp);
+        aluminePaneel.add(registerNupp);
 
-        getContentPane().add(panel, BorderLayout.CENTER);
+        JButton sulgeNupp = new JButton("Sulge rakendus");
+        sulgeNupp.addActionListener(e -> System.exit(0));
+        aluminePaneel.add(sulgeNupp);
+
+        paneel.add(üleminePaneel);
+        paneel.add(aluminePaneel);
+
+        getContentPane().add(paneel, BorderLayout.CENTER);
         pack();
         setLocationRelativeTo(parent);
     }
